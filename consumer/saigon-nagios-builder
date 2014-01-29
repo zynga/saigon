@@ -1,0 +1,78 @@
+#!/usr/bin/php -d hidef.data_path=no
+<?php
+//
+// Copyright (c) 2013, Zynga Inc.
+// https://github.com/zynga/saigon
+// Author: Matt West (https://github.com/mhwest13)
+// License: BSD 2-Clause
+//
+
+/**
+ * Requires for includes of functions and definitions 
+ */
+require_once dirname(dirname(__FILE__)).'/conf/saigon-nagios-builder.inc.php';
+// Lets load up the composer autoloader
+require_once BASE_PATH. '/vendor/autoload.php';
+// Lets load up the saigon autoloader
+require_once BASE_PATH.'/lib/classLoader.class.php';
+Saigon_ClassLoader::register();
+
+$naglogger = new NagLogger();
+
+$deployment = DEPLOYMENT;
+if (empty($deployment)) {
+    $naglogger->addToLog("Unable to build nagios files, missing deployment information, please add the deployment to ".dirname(dirname(__FILE__))."/conf/deployment.inc.php");
+    exit(1);
+}
+
+if (file_exists(PID_FILE)) {
+    $pid = file_get_contents(PID_FILE);
+    if (posix_getsid($pid) === false) {
+        /* No Job is Running, lets go ahead and start processing */
+        file_put_contents(PID_FILE, getmypid());
+    } else {
+        $naglogger->addToLog("Nagios Build Process currently running at {$pid}, exiting to avoid possible conflict or contention");
+        exit(1);
+    }
+} else {
+    file_put_contents(PID_FILE, getmypid());
+}
+
+$naglogger->addToLog("Now building nagios deployment files in a temporary location, if changes are detected and configuration checks pass, the files will then be moved from the temporary location and placed in the production folder, before the nagios service is restarted");
+NagCreate::setSubDeployment(SUBDEPLOYMENT);
+$buildReturn = NagCreate::buildDeployment($deployment);
+if ($buildReturn !== true) {
+    $naglogger->addToLog("Nagios Configuration Failed to Build Deployment: $buildReturn");
+    exit(1);
+}
+
+$testReturn = NagCreate::testDeployment($deployment);
+if ($testReturn['exitcode'] != 0) {
+    $naglogger->addToLog("Nagios Configuration Testing Failed");
+    $naglogger->addToLog($testReturn['output']);
+    exit(1);
+}
+
+if ((isset($argv[1])) && ($argv[1] == '-t')) {
+    $naglogger->addToLog("Nagios Configuration Test Flag Caught, Testing Successful, Now Exiting...");
+    exit(0);
+}
+
+$moveReturn = NagCreate::moveDeployment($deployment, DEBUG);
+if (!empty($moveReturn)) {
+    $naglogger->addToLog("Nagios Configuration Creation Successful, Config Changes Detected, Restarting Nagios...");
+    foreach ($moveReturn as $file) {
+        $naglogger->addToLog("Updated File: $file");
+    }
+    $restartReturn = NagCreate::restartNagios();
+    if ($restartReturn['exitcode'] != 0) {
+        $naglogger->addToLog("Error Restarting Nagios");
+        exit(1);
+    }
+    $naglogger->addToLog("Nagios Successfully restarted, Exiting process...");
+    exit(0);
+}
+
+$naglogger->addToLog("Nagios Configuration Creation Successful, Unable to detect config differences between tmp and current production configs, exiting process...");
+exit(0);
+

@@ -1,0 +1,371 @@
+#!/usr/bin/perl
+#
+#
+# Copyright (c) 2013, Zynga Inc.
+# https://github.com/zynga/saigon
+# Author: Matt West (https://github.com/mhwest13)
+# License: BSD 2-Clause
+#
+
+=head1 saigon-modgearman-builder
+
+    Perl script for building the mod_gearman config file...
+
+    version 0.2
+
+=cut
+
+use strict;
+use warnings;
+use Config::Auto;
+use Digest::MD5;
+use File::Copy;
+use JSON;
+use LWP::UserAgent;
+use MIME::Base64;
+use IO::Interface::Simple;
+
+my $dir = "/opt/saigon/conf";
+my $config = parseconfig($dir . "/saigon-modgearman-builder.ini");
+my $restartinfo;
+if (!defined($config->{deployment})) {
+    print returntime() . " Error No Deployment Found, Exiting...\n";
+    exit(1);
+} elsif (!defined($config->{url})) {
+    print returntime() . " Error No Saigon URL Specified, Exiting...\n";
+    exit(1);
+} elsif (!defined($config->{version})) {
+    print returntime() . " Error No ModGearman Builder Version Specified, Exiting...\n";
+    exit(1);
+}
+
+my $responsedata = fetchmodgearmandata($config->{deployment}, $config->{url}, $config->{version});
+if (!$responsedata) {
+    print returntime() . " Error Fetching Modgearman Configuration File(s) for Deployment: " .
+        $config->{deployment} . " , from URL: " . $config->{url} . "\n";
+    exit(1);
+}
+
+$responsedata = decode_json($responsedata);
+if (defined($responsedata->{error})) {
+    print returntime() . " Error Processing Modgearman Configuration File(s) for Deployment: " .
+        $config->{deployment} . " :: " . $responsedata->{error} . "\n";
+    exit(1);
+}
+
+my ($ncreturn, $ncresponse, $wcreturn, $wcresponse) = createfiles($config, $responsedata);
+if ( ( defined( $ncreturn ) ) && ( $ncreturn == 0 ) ) {
+    print returntime() . " Error Creating Temporary Modgearman Configuration File(s) for Deployment: " .
+        $config->{deployment} . " , error info: " . $ncresponse . "\n";
+    cleanuptempfile($config->{deployment}, $config->{mode});
+    exit(1);
+} elsif ( ( defined( $wcreturn ) ) && ( $wcreturn == 0 ) ) {
+    print returntime() . " Error Creating Temporary Modgearman Configuration File(s) for Deployment: " .
+        $config->{deployment} . " , error info: " . $wcresponse . "\n";
+    cleanuptempfile($config->{deployment}, $config->{mode});
+    exit(1);
+}
+
+my ( $nreturn, $wreturn ) = movefile($config->{deployment}, $config->{location}, $config->{mode});
+if ( ( $nreturn == 2 ) && ( $wreturn == 2 ) ) {
+    print returntime() . " Modgearman Configuration File(s) Didn't Need Updating for Deployment: " .
+        $config->{deployment} . "\n";
+    cleanuptempfile($config->{deployment}, $config->{mode});
+    exit(0);
+} elsif ( ( $nreturn == 0 ) && ( $wreturn == 0 ) ) {
+    print returntime() . " Error Detected attempting to move Modgearman Configuration File(s) for Deployment : " .
+        $config->{deployment} . " , check to ensure script is running with proper permissions\n";
+    exit(1);
+}
+
+my ( $nebrestart, $wrkrestart ) = execposthook($config);
+if ( ( $nebrestart != 1 ) || ( $wrkrestart != 1 ) ) {
+    print returntime() . " Error Restarting Modgearman Workers and Dependencies for Deployment: " .
+        $config->{deployment} . "\n";
+    rollback($config->{location}, $config->{mode});
+    exit(1);
+} else {
+    print returntime() . " Successfully Restarted Modgearman Workers for Deployment: " .
+        $config->{deployment} . "\n";
+    cleanbackup($config->{location}, $config->{mode});
+}
+exit(0);
+
+=head1 Subroutines...
+
+=head2 returntime
+
+    Simple routine to return the time formatted to look similar to an apache log
+
+=cut
+
+sub returntime {
+    my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime(time);
+    sprintf("[%02d/%02d/%02d %02d:%02d:%02d]", $year+1900, $mon+1, $mday, $hour, $min, $sec);
+} 
+
+=head2 cleanuptempfile
+
+    Routine that is called to ensure we don't leave temp files lingering around in the
+    temp filesystem, this is mainly here to help prevent confusion over files that should
+    or shouldn't be in play.
+
+=cut
+
+sub cleanuptempfile {
+    my ( $deployment, $mode ) = ( @_ );
+    if ( ( $mode =~ /neb|both/ ) && ( -e "/tmp/mod_gearman_neb." . $deployment . ".in" ) ) {
+        unlink("/tmp/mod_gearman_neb." . $deployment . ".in");
+    }
+    if ( ( $mode =~ /worker|both/ ) && ( -e "/tmp/mod_gearman_worker." . $deployment . ".in" ) ) {
+        unlink("/tmp/mod_gearman_worker." . $deployment . ".in");
+    }
+    return;
+}
+
+=head2 execposthook
+
+    Routine to just run the posthook specified
+
+=cut
+
+sub execposthook {
+    my $configref = shift;
+    my ( $nebrestart, $wrkrestart ) = 0;
+    if ( $configref->{mode} =~ /neb|both/ ) {
+        system($configref->{neb_posthook} . ' 2&>/dev/null 1&>/dev/null');
+        $nebrestart = $? >> 8;
+    }
+    else {
+        $nebrestart = 1;
+    }
+    if ( $configref->{mode} =~ /worker|both/ ) {
+        system($configref->{worker_posthook} . ' 2&>/dev/null 1&>/dev/null');
+        $wrkrestart = $? >> 8;
+    }
+    else {
+        $wrkrestart = 1;
+    }
+    return ( $nebrestart, $wrkrestart );
+}
+
+=head2 movefile
+
+    Routine to just move the temp file to the permanent location
+
+=cut
+
+sub movefile {
+    my ( $deployment, $location, $mode ) = ( @_ );
+    my ( $nreturn, $wreturn ) = ( 2, 2 );
+    if ( ( $mode =~ /neb|both/ ) && ( -e "/tmp/mod_gearman_neb." . $deployment . ".in" ) ) {
+        my $file = "/tmp/mod_gearman_neb." . $deployment . ".in";
+        my $dst = $location . "/mod_gearman_neb.conf";
+        my $backup = $location . "/mod_gearman_neb.conf.bak";
+        last if (!-e $file);
+        if (-e $dst) {
+            my $backupreturn = copy($dst, $backup);
+            if ($backupreturn == 1) {
+                move($file, $dst);
+                $nreturn = 1;
+            }
+            else {
+                $nreturn = 0;
+            }
+        }
+        else {
+            move($file, $dst);
+            $nreturn = 1;
+        }
+    }
+    if ( ( $mode =~ /worker|both/ ) && ( -e "/tmp/mod_gearman_worker." . $deployment . ".in" ) ) {
+        my $file = "/tmp/mod_gearman_worker." . $deployment . ".in";
+        my $dst = $location . "/mod_gearman_worker.conf";
+        my $backup = $location . "/mod_gearman_worker.conf.bak";
+        last if (!-e $file);
+        if (-e $dst) {
+            my $backupreturn = copy($dst, $backup);
+            if ($backupreturn == 1) {
+                move($file, $dst);
+                $wreturn = 1;
+            }
+            else {
+                $wreturn = 0;
+            }
+        }
+        else {
+            move($file, $dst);
+            $wreturn = 1;
+        }
+    }
+    return ( $nreturn, $wreturn );
+}
+
+=head2 createfiles
+
+    Routine for managing the creation of more than one file, acts as a wrapper
+    for createfile
+
+=cut
+
+sub createfiles {
+    my ( $configref, $dataref ) = ( @_ );
+    my ( $nreturn, $nresponse ) = undef;
+    my ( $creturn, $cresponse ) = undef;
+    if ( $configref->{mode} =~ /neb|both/ ) {
+        my $file = $configref->{location} . "/mod_gearman_neb.conf";
+        ( $nreturn, $nresponse ) = createfile($file, 'neb', $dataref);
+    }
+    if ( $configref->{mode} =~ /worker|both/ ) {
+        my $file = $configref->{location} . "/mod_gearman_worker.conf";
+        ( $creturn, $cresponse ) = createfile($file, 'worker', $dataref);
+    }
+    return ( $nreturn, $nresponse, $creturn, $cresponse );
+}
+
+=head2 createfile
+
+    Routine for creating our temporary file and ensuring the contents md5
+    match the md5 we have gotten from the server
+
+=cut
+
+sub createfile {
+    my @corekeys = (
+        qw(
+            debug eventhandler services hosts do_hostchecks encryption
+            server dupeserver hostgroups servicegroups logfile key
+        )
+    );
+    my @nebkeys = (
+        qw(
+            result_workers use_uniq_jobs localhostgroup localservicegroup queue_custom_variable
+            perfdata perfdata_mode orphan_host_checks orphan_service_checks accept_clear_results
+        )
+    );
+    my @wrkkeys = (
+        qw(
+            job-timeout min-worker max-worker idle-timeout max-jobs max-age spawn-rate
+            fork_on_exec show_error_output workaround_rc_25 load_limit1 load_limit5
+            load_limit15 dup_results_are_passive enable_embedded_perl use_embedded_perl_implicitly
+            use_perl_cache p1_file
+        )
+    );
+    my ($file, $mode, $dataref) = (@_);
+    my ($currmd5, $createmd5, $tmpfile) = "";
+    my $md5ctx = Digest::MD5->new;
+    if (-e $file) {
+        open(FILE, $file) or return (0, $!);
+        $md5ctx->addfile(*FILE);
+        $currmd5 = $md5ctx->hexdigest;
+        close(FILE);
+    }
+    $md5ctx->reset();
+    my $filecontents = "# This file has been autogenerated, any changes you make to this file\n";
+    $filecontents .= "# will be overridden the next time the consumer runs\n\n";
+    foreach my $key ( sort keys %{$dataref} ) {
+        if (grep $_ eq $key, @corekeys) {
+            if ($key eq "logfile") {
+                $filecontents .= $key . "=" . decode_base64($dataref->{$key}) . "\n";
+            }
+            else {
+                $filecontents .= $key . "=" . $dataref->{$key} . "\n";
+            }
+        }
+        elsif ( ( $mode eq "neb" ) && ( grep $_ eq $key, @nebkeys ) ) {
+            $filecontents .= $key . "=" . $dataref->{$key} . "\n";
+        }
+        elsif ( ( $mode eq "worker" ) && ( grep $_ eq $key, @wrkkeys ) ) {
+            if ( $key eq "p1_file" ) {
+                $filecontents .= $key . "=" . decode_base64($dataref->{$key}) . "\n";
+            }
+            else {
+                $filecontents .= $key . "=" . $dataref->{$key} . "\n";
+            }
+        }
+    }
+    $md5ctx->add($filecontents);
+    $createmd5 = $md5ctx->hexdigest;
+    return (1, $currmd5) if ($createmd5 eq $currmd5);
+    if ( $mode eq "neb" ) {
+        $tmpfile = "/tmp/mod_gearman_neb." . $config->{deployment} . ".in";
+    }
+    elsif ( $mode eq "worker" ) {
+        $tmpfile = "/tmp/mod_gearman_worker." . $config->{deployment} . ".in";
+    }
+    open(my $fh, ">", $tmpfile) or return (0, $!);
+    print $fh $filecontents;
+    close($fh);
+    return (1, $createmd5);
+}
+
+=head2 fetchmodgearmandata
+
+    Routine for fetching the mod_gearman configuration information from the saigon
+    url specified.
+
+=cut
+
+sub fetchmodgearmandata {
+    my ($deployment,$url,$version) = (@_);
+    $url .= '/getMGCfg/' . $deployment;
+    my $eth0Interface = IO::Interface::Simple->new('eth0');
+    my $ua = LWP::UserAgent->new();
+    $ua->agent('Saigon Mod-Gearman Data Fetcher/' . $version . ' (' . $ua->_agent . '/' . $eth0Interface->address . ')');
+    $ua->ssl_opts('verify_hostname' => 0);
+    my $response = $ua->post($url);
+    if ($response->is_error) {
+        return 0;
+    }
+    return $response->content;
+}
+
+=head2 parseconfig
+
+    Routine that parses the configuration file specified
+
+=cut
+
+sub parseconfig {
+    my $cfg = shift;
+    my $config = Config::Auto::parse($cfg);
+    return $config->{Main};
+}
+
+=head2 rollback
+
+    Routine to rollback the old config because something failed after placing the file
+    into the proper location, and the workers not restarting, common problems are permissions
+
+=cut
+
+sub rollback {
+    my ( $location, $mode ) = ( @_ );
+    if ( ( $mode =~ /neb|both/ ) && ( -e $location . "/mod_gearman_neb.conf.bak" ) ) {
+        my $file = $location . "/mod_gearman_neb.conf";
+        move($file . ".bak", $file);
+    }
+    if ( ( $mode =~ /worker|both/ ) && ( -e $location . "/mod_gearman_worker.conf.bak" ) ) {
+        my $file = $location . "/mod_gearman_worker.conf";
+        move($file . ".bak", $file);
+    }
+    return;
+}
+
+=head2 cleanbackup
+
+    Routine for clearing the backup file we made upon successful move / copy of
+    new file
+
+=cut
+
+sub cleanbackup {
+    my ( $location, $mode ) = ( @_ );
+    if ( ( $mode =~ /neb|both/ ) && ( -e $location . "/mod_gearman_neb.conf.bak" ) ) {
+        unlink($location . "/mod_gearman_neb.conf.bak");
+    }
+    if ( ( $mode =~ /worker|both/ ) && ( -e $location . "/mod_gearman_worker.conf.bak" ) ) {
+        unlink($location . "/mod_gearman_worker.conf.bak");
+    }
+    return;
+}

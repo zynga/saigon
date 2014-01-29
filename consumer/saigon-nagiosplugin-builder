@@ -1,0 +1,223 @@
+#!/usr/bin/perl
+#
+#
+# Copyright (c) 2013, Zynga Inc.
+# https://github.com/zynga/saigon
+# Author: Matt West (https://github.com/mhwest13)
+# License: BSD 2-Clause
+#
+
+=head1 saigon-nagiosplugin-builder
+
+    Perl script for creating custom Nagios Plugins on Nagios Clusters that are
+    stored in the Saigon product...
+
+    This was built in perl to reduce dependency on php, but still facilitate
+    the same process / proceedures when it comes to file handling / verification
+
+    This is only temporary, I will be moving this function into the Nagios Builder
+    consumer in a future version.
+
+=cut
+
+
+use strict;
+use warnings;
+use Config::Auto;
+use Digest::MD5;
+use File::Copy;
+use JSON;
+use LWP::UserAgent;
+use MIME::Base64;
+use IO::Interface::Simple;
+
+my $dir = "/opt/saigon/conf";
+my $config = parseconfigs($dir . "/saigon-nagiosplugin-builder.ini");
+my ($restartinfo, $backups);
+
+if (!defined($config->{deployments})) {
+    print returntime() . " Error No Deployment Inis Found, Exiting...\n";
+    exit(1);
+} elsif (!defined($config->{Main}->{version})) {
+    print returntime() . " Error No Nagios Plugin Builder Version Specified, Exiting...\n";
+    exit(1);
+}
+
+foreach my $deploykey ( keys %{$config->{deployments}} ) {
+    my $hostname = `/bin/hostname`;
+    chomp($hostname);
+    handleplugins($deploykey, $config->{Main}->{nagrequrl}, $config->{Main}->{version}, $hostname);
+}
+
+exit(0);
+
+=head1 Subroutines...
+
+=head2 returntime
+
+    Simple routine to return the time formatted to look similar to an apache log
+
+=cut
+
+sub returntime {
+    my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime(time);
+    sprintf("[%02d/%02d/%02d %02d:%02d:%02d]", $year+1900, $mon+1, $mday, $hour, $min, $sec);
+} 
+
+=head2 parseconfigs
+
+    Routine that parses the main config, and then loads up the deployment based inis
+    living in the include directory, returns a hashref of all the data separated by
+    deployment names
+
+=cut
+
+sub parseconfigs {
+    my $cfg = shift;
+    my $config = Config::Auto::parse($cfg);
+    my $includes;
+    opendir(DIR, $config->{Main}->{ini_dir}) or die $!;
+    foreach my $file (readdir(DIR)) {
+        next if (($file eq "..") || ($file eq "."));
+        my $fullfile = $config->{Main}->{ini_dir}."/".$file;
+        my $tmpconfig = Config::Auto::parse($fullfile);
+        my $deployment = $tmpconfig->{Main}->{deployment};
+        $includes->{$deployment} = "active";
+        ($fullfile, $tmpconfig, $deployment) = undef;
+    }
+    closedir(DIR);
+    $config->{deployments} = $includes;
+    return $config;
+}
+
+=head2 handleplugins
+
+    Routine meant to call back / check plugins on the system and update them
+    as needed
+
+=cut
+
+sub handleplugins {
+    my ($deployment, $url, $version, $hostname) = (@_);
+    my $tmpdata = fetchnagiospluginlist($deployment, $url, $version, $hostname);
+    return unless($tmpdata);
+    my $pluginref = decode_json($tmpdata);
+    my @fetchplugins;
+    foreach my $file ( keys %{$pluginref} ) {
+        next if(!defined($pluginref->{$file}->{name}));
+        my $location = decode_base64($pluginref->{$file}->{location});
+        $location .= $pluginref->{$file}->{name};
+        my $currmd5;
+        if (-e $location) {
+            open(FILE, $location) or return 0;
+            my $md5ctx = Digest::MD5->new;
+            $md5ctx->addfile(*FILE);
+            $currmd5 = $md5ctx->hexdigest;
+            close(FILE);
+        } else {
+            push(@fetchplugins, $pluginref->{$file}->{name});
+            next;
+        }
+        if ($currmd5 ne $pluginref->{$file}->{md5}) {
+            push(@fetchplugins, $pluginref->{$file}->{name});
+        }
+    }
+    if (@fetchplugins) {
+        my $response = fetchnagiosplugins($deployment, $url, $version, $hostname, @fetchplugins);
+        my $plugininfo = decode_json($response);
+        foreach my $file ( keys %{$plugininfo} ) {
+            next if (!defined($plugininfo->{$file}->{name}));
+            my $output = createnagiosplugin($plugininfo->{$file});
+            if ($output == 0) {
+                print returntime() . ' Error Creating File ' . $plugininfo->{$file}->{name} . "\n";
+            }
+        }
+    }
+}
+
+=head2 fetchnagiospluginlist
+
+    Routine for fetching the nagios plugins list from the central saigon system
+
+=cut
+
+sub fetchnagiospluginlist {
+    my ($deployment, $url, $version, $hostname) = (@_);
+    $url .= '/getNagiosPlugins/' . $deployment;
+    my $interface;
+    my @interfaces = IO::Interface::Simple->interfaces;
+    if (grep $_ eq "xenbr0", @interfaces) {
+        $interface = IO::Interface::Simple->new('xenbr0');
+    } elsif (grep $_ eq "bond0", @interfaces) {
+        $interface = IO::Interface::Simple->new('bond0');
+    } else {
+        $interface = IO::Interface::Simple->new('eth0');
+    }
+    my $ua = LWP::UserAgent->new();
+    $ua->agent('Saigon Nagios Plugin Fetcher/' . $version . ' (' . $ua->_agent . '/' . $interface->address . ')');
+    $ua->ssl_opts('verify_hostname' => 0);
+    my $response = $ua->post($url);
+    if ($response->is_error) {
+        return 0;
+    }
+    return $response->content;
+}
+
+=head2 fetchnagiosplugins
+
+    Routine for fetching nagios plugins from the central saigon system
+
+=cut
+
+sub fetchnagiosplugins {
+    my ($deployment, $url, $version, $hostname, @plugins) = (@_);
+    $url .= '/getNagiosPlugin/' . $deployment . '/' . join(",", @plugins);
+    my $interface;
+    my @interfaces = IO::Interface::Simple->interfaces;
+    if (grep $_ eq "xenbr0", @interfaces) {
+        $interface = IO::Interface::Simple->new('xenbr0');
+    } elsif (grep $_ eq "bond0", @interfaces) {
+        $interface = IO::Interface::Simple->new('bond0');
+    } else {
+        $interface = IO::Interface::Simple->new('eth0');
+    }
+    my $ua = LWP::UserAgent->new();
+    $ua->agent('Saigon Nagios Plugin Fetcher/' . $version . ' (' . $ua->_agent . '/' . $interface->address . ')');
+    $ua->ssl_opts('verify_hostname' => 0);
+    my $response = $ua->post($url);
+    if (!$response->is_success) {
+        return 0;
+    }
+    return $response->content;
+}
+
+=head2 createnagiosplugin
+
+    Routine for creating the nagios plugin that has been specified
+
+=cut
+
+sub createnagiosplugin {
+    my $pluginref = shift;
+    my $tmpmd5 = "";
+    my $file = decode_base64($pluginref->{location});
+    $file .= $pluginref->{name};
+    my $mode = 0755;
+    eval {
+        # Write the file...
+        open(my $fh, ">", $file) or return 0;
+        print $fh decode_base64($pluginref->{file});
+        close($fh);
+        # Read the file, verify md5 sums...
+        open(FILE, $file) or return 0;
+        my $md5ctx = Digest::MD5->new;
+        $md5ctx->addfile(*FILE);
+        $tmpmd5 = $md5ctx->hexdigest;
+        close(FILE);
+        chmod $mode, $file;
+    };
+    if ($@) { print returntime() . " Error Creating File " . $pluginref->{name} . "\n"; return 0; }
+    elsif ($tmpmd5 ne $pluginref->{md5}) { print returntime() . " MD5 Sums Dont Match for " . $pluginref->{name} . "\n"; return 0; }
+    return 1;
+}
+

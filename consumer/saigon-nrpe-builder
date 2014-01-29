@@ -1,0 +1,563 @@
+#!/usr/bin/perl
+#
+#
+# Copyright (c) 2013, Zynga Inc.
+# https://github.com/zynga/saigon
+# Author: Matt West (https://github.com/mhwest13)
+# License: BSD 2-Clause
+#
+
+=head1 saigon-nrpe-builder
+
+    Perl script for building the NRPE config file...
+
+    This was built in perl to reduce dependency on php, but still facilitate
+    the same process / proceedures when it comes to file handling / verification
+
+=cut
+
+
+use strict;
+use warnings;
+use Config::Auto;
+use Digest::MD5;
+use File::Copy;
+use JSON;
+use LWP::UserAgent;
+use MIME::Base64;
+use IO::Interface::Simple;
+
+my $dir = "/opt/saigon/conf";
+my $config = parseconfigs($dir . "/saigon-nrpe-builder.ini");
+my ($restartinfo, $backups);
+
+if (!defined($config->{deployments})) {
+    print returntime() . " Error No Deployment Inis Found, Exiting...\n";
+    exit(1);
+} elsif (!defined($config->{Main}->{version})) {
+    print returntime() . " Error No NRPE Builder Version Specified, Exiting...\n";
+    exit(1);
+} elsif (!defined($config->{Main}->{user})) {
+    print returntime() . " Error No NRPE User Specified for File Ownership...\n";
+    exit(1);
+}
+
+checkiptables();
+
+checkfilecollisions($config->{deployments});
+
+foreach my $deploykey ( keys %{$config->{deployments}} ) {
+    my $deployinfo = $config->{deployments}->{$deploykey};
+    my $hostname = `/bin/hostname`;
+    chomp($hostname);
+    handlecorecfg($deploykey, $deployinfo, $config->{Main}->{version}, $hostname, $config->{Main}->{user});
+    handlesuppcfg($deploykey, $deployinfo, $config->{Main}->{version}, $hostname, $config->{Main}->{user});
+}
+
+if ($restartinfo) {
+    sleep(5); # Allowing a moment to pass for filesystem syncs
+    foreach my $md5 ( keys %{$restartinfo} ) {
+        my $execreturn = execposthook($restartinfo->{$md5}->{posthook});
+        if ($execreturn != 0) {
+            print returntime() . " Error Restarting NRPE Daemon for Deployments: " .
+                join(", ", @{$restartinfo->{$md5}->{deployments}}) . "\n";
+            rollback($backups);
+            exit(1);
+        } else {
+            print returntime() .
+                " Successfully Restarted NRPE Daemon and Updated Configuration File for Deployments: " .
+                join(", ", @{$restartinfo->{$md5}->{deployments}}) . "\n";
+            cleanbackup($backups);
+        }
+    }
+}
+
+exit(0);
+
+=head1 Subroutines...
+
+=head2 returntime
+
+    Simple routine to return the time formatted to look similar to an apache log
+
+=cut
+
+sub returntime {
+    my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime(time);
+    sprintf("[%02d/%02d/%02d %02d:%02d:%02d]", $year+1900, $mon+1, $mday, $hour, $min, $sec);
+} 
+
+=head2 cleanuptempfile
+
+    Routine that is called to ensure we don't leave temp files lingering around in the
+    temp filesystem, this is mainly here to help prevent confusion over files that should
+    or shouldn't be in play.
+
+=cut
+
+sub cleanuptempfile {
+    my ($deployment, $actionarg) = (@_);
+    my $file = "";
+    if ($actionarg eq "core") { $file = "/tmp/nrpe." . $deployment . ".in"; }
+    elsif ($actionarg eq "supp") { $file = "/tmp/nrpe." . $deployment . ".supp.in"; }
+    else { return 0; }
+    return if (!-e $file);
+    unlink($file);
+    return;
+}
+
+=head2 execposthook
+
+    Routine to just run the posthook specified
+
+=cut
+
+sub execposthook {
+    my $posthook = shift;
+    return system($posthook . ' 2&>/dev/null 1&>/dev/null');
+}
+
+=head2 addexecposthook
+
+    Routine to help group the posthooks together and minimize nrpe client
+    restarts, assuming more than one config file needs to be updated and the
+    config files reference the same nrpe client, this will ensure the client
+    only restarts once, rather than many times.
+
+=cut
+
+sub addexecposthook {
+    my ($deployment, $posthook, $actionarg) = (@_);
+    my $md5ctx = Digest::MD5->new;
+    $md5ctx->add($posthook);
+    my $md5 = $md5ctx->hexdigest;
+    push(@{$restartinfo->{$md5}->{deployments}}, $actionarg . ":" . $deployment);
+    $restartinfo->{$md5}->{posthook} = $posthook;
+    return;
+}
+
+=head2 movefile
+
+    Routine to just move the temp file to the permanent location
+
+=cut
+
+sub movefile {
+    my ($deployment, $dst, $actionarg) = (@_);
+    my $file = "";
+    my $backupfile = $dst . ".bak";
+    if ($actionarg eq "core") { $file = "/tmp/nrpe." . $deployment . ".in"; }
+    elsif ($actionarg eq "supp") { $file = "/tmp/nrpe." . $deployment . ".supp.in"; }
+    else { return 0; }
+    return 0 if (!-e $file);
+    if (-e $dst) {
+        my $copyreturn = copy($dst, $backupfile);
+        if ($copyreturn == 1) { $backups->{$dst} = $backupfile; return move($file, $dst); }
+        else { return 0 }
+    } else {
+        return move($file, $dst);
+    }
+}
+
+=head2 createfile
+
+    Routine for creating our temporary file and ensuring the contents md5
+    match the md5 we have gotten from the server
+
+=cut
+
+sub createfile {
+    my ($deployment, $refdata, $actionarg, $fileowner) = (@_);
+    my $currmd5 = "";
+    if (-e $refdata->{location}) {
+        open(FILE, $refdata->{location}) or return 0;
+        my $md5ctx = Digest::MD5->new;
+        $md5ctx->addfile(*FILE);
+        $currmd5 = $md5ctx->hexdigest;
+        close(FILE);
+    }
+    if ($currmd5 ne $refdata->{md5}) {
+        my $file = "";
+        if ($actionarg eq "core") { $file = "/tmp/nrpe." . $deployment . ".in"; }
+        elsif ($actionarg eq "supp") { $file = "/tmp/nrpe." . $deployment . ".supp.in"; }
+        else { return 0; }
+        my $tmpmd5 = "";
+        my ($login, $pass, $uid, $gid) = getpwnam($fileowner);
+        my $mode = 0644;
+        eval {
+            # Write the file...
+            open(my $fh, ">", $file) or return 0;
+            print $fh decode_base64($refdata->{b64});
+            close($fh);
+            # Read the file, verify md5 sums...
+            open(FILE, $file) or return 0;
+            my $md5ctx = Digest::MD5->new;
+            $md5ctx->addfile(*FILE);
+            $tmpmd5 = $md5ctx->hexdigest;
+            close(FILE);
+            chmod $mode, $file;
+            chown $uid, $gid, $file;
+        };
+        if ($@) { return 0; }
+        elsif ($tmpmd5 ne $refdata->{md5}) { return 0; }
+    }
+    return 1;
+}
+
+=head2 fetchnrpedata
+
+    Routine for fetching the nrpe config / supplemental config data from the saigon 
+    url specified.
+
+=cut
+
+sub fetchnrpedata {
+    my ($deployment,$url,$actionarg,$version,$hostname) = (@_);
+    if ($actionarg eq "core") { $url .= "/getNRPECfg"; } 
+    elsif ($actionarg eq "supp") { $url .= "/getSupNRPECfg"; }
+    else { return 0; }
+    $url .= '/' . $deployment;
+    my $interface;
+    my @interfaces = IO::Interface::Simple->interfaces;
+    if (grep $_ eq "xenbr0", @interfaces) {
+        $interface = IO::Interface::Simple->new('xenbr0');
+    } elsif (grep $_ eq "bond0", @interfaces) {
+        $interface = IO::Interface::Simple->new('bond0');
+    } else {
+        $interface = IO::Interface::Simple->new('eth0');
+    }
+    my $ua = LWP::UserAgent->new();
+    $ua->agent('Saigon NRPE Data Fetcher/' . $version . ' (' . $ua->_agent . '/' . $interface->address . ')');
+    $ua->ssl_opts('verify_hostname' => 0);
+    my $response = $ua->post($url);
+    if ($response->is_error) {
+        return 0;
+    }
+    return $response->content;
+}
+
+=head2 parseconfigs
+
+    Routine that parses the main config, and then loads up the deployment based inis
+    living in the include directory, returns a hashref of all the data separated by
+    deployment names
+
+=cut
+
+sub parseconfigs {
+    my $cfg = shift;
+    my $config = Config::Auto::parse($cfg);
+    my $includes;
+    opendir(DIR, $config->{Main}->{ini_dir}) or die $!;
+    foreach my $file (readdir(DIR)) {
+        next if (($file eq "..") || ($file eq "."));
+        my $fullfile = $config->{Main}->{ini_dir}."/".$file;
+        my $tmpconfig = Config::Auto::parse($fullfile);
+        my $deployment = $tmpconfig->{Main}->{deployment};
+        $includes->{$deployment} = $tmpconfig->{Main};
+        ($fullfile, $tmpconfig, $deployment) = undef;
+    }
+    closedir(DIR);
+    $config->{deployments} = $includes;
+    return $config;
+}
+
+=head2 handlecorecfg 
+
+    Routine that checks to see if the core nrpe config file is defined in the ini, and
+    the proceeds to process that file if it is active. Used for controlling core nrpe.cfg
+    files, not the supplemental include directory configs.
+
+=cut
+
+sub handlecorecfg {
+    my ($deploykey, $deployinfo, $version, $hostname, $fileowner) = (@_);
+    return if ($deployinfo->{core} == 0);
+    my $url = "";
+    if ($deployinfo->{core_url}) { $url = $deployinfo->{core_url}; }
+    else { $url = $config->{Main}->{nagrequrl}; }
+    my $tmpdata = fetchnrpedata($deploykey, $url, "core", $version, $hostname);
+    if (!$tmpdata) {
+        print returntime(). " Error Fetching NRPE Configuration for Deployment: " .
+            $deployinfo->{deployment} . "\n";
+        return;
+    }
+    $tmpdata = decode_json($tmpdata);
+    if (defined($tmpdata->{error})) {
+        print returntime() . " Error Processing NRPE Configration File for Deployment: " . 
+            $deployinfo->{deployment} . " :: " . $tmpdata->{error} . "\n";
+        return;
+    } elsif ($tmpdata->{location} ne $deployinfo->{core_location}) {
+        print returntime() . " Error NRPE Configuration File Locations Do Not Match for Deployment: " .
+            $deployinfo->{deployment} . "\n";
+        return;
+    }
+    my $createreturn = createfile($deploykey, $tmpdata, "core", $fileowner);
+    if ($createreturn == 0) {
+        print returntime() . " Error Creating Temporary NRPE Configuration File for Deployment: " .
+            $deployinfo->{deployment} . "\n";
+        return;
+    }
+    my $movereturn = movefile($deploykey, $tmpdata->{location}, "core");
+    if ($movereturn != 1) {
+        print returntime() . " NRPE Configuration File Didn't Need Updating for Deployment: " .
+            $deployinfo->{deployment} . "\n";
+        cleanuptempfile($deploykey, "core");
+        handleplugins($deploykey, $url, "core", $version, $tmpdata->{plugins}, $hostname);
+        return;
+    }
+    handleplugins($deploykey, $url, "core", $version, $tmpdata->{plugins}, $hostname);
+    addexecposthook($deploykey, $deployinfo->{core_posthook}, "core");
+    cleanuptempfile($deploykey, "core");
+    return;
+}
+
+=head2 handlesuppcfg
+
+    Routine that checks to see if the supplemental nrpe config file is defined in the ini, and
+    the proceeds to process that file if it is active. Used for controlling supplemental nrpe config
+    files, that live in the include directory specified.
+
+=cut
+
+sub handlesuppcfg {
+    my ($deploykey, $deployinfo, $version, $hostname, $fileowner) = (@_);
+    return if ($deployinfo->{supplemental} == 0);
+    my $url = "";
+    if ($deployinfo->{supp_url}) { $url = $deployinfo->{supp_url}; }
+    else { $url = $config->{Main}->{nagrequrl}; }
+    my $tmpdata = fetchnrpedata($deploykey, $url, "supp", $version, $hostname);
+    if (!$tmpdata) {
+        print returntime(). " Error Fetching Supplemental NRPE Configuration for Deployment: " .
+            $deployinfo->{deployment} . "\n";
+        return;
+    }
+    $tmpdata = decode_json($tmpdata);
+    if (defined($tmpdata->{error})) {
+        print returntime() . " Error Processing Supplemental NRPE Configration File for Deployment: " . 
+            $deployinfo->{deployment} . " :: " . $tmpdata->{error} . "\n";
+        return;
+    } elsif ($tmpdata->{location} ne $deployinfo->{supp_location}) {
+        print returntime() . " Error Supplemental NRPE Configuration File Locations Do Not Match for Deployment: " .
+            $deployinfo->{deployment} . "\n";
+        return;
+    }
+    my $createreturn = createfile($deploykey, $tmpdata, "supp", $fileowner);
+    if ($createreturn == 0) {
+        print returntime() . " Error Creating Temporary Supplemental NRPE Configuration File for Deployment: " .
+            $deployinfo->{deployment} . "\n";
+        return;
+    }
+    my $movereturn = movefile($deploykey, $tmpdata->{location}, "supp");
+    if ($movereturn != 1) {
+        print returntime() . " Supplemental NRPE Configuration File Didn't Need Updating for Deployment: " .
+            $deployinfo->{deployment} . "\n";
+        cleanuptempfile($deploykey, "supp");
+        handleplugins($deploykey, $url, "supp", $version, $tmpdata->{plugins}, $hostname);
+        return;
+    }
+    handleplugins($deploykey, $url, "supp", $version, $tmpdata->{plugins}, $hostname);
+    addexecposthook($deploykey, $deployinfo->{supp_posthook}, "supp");
+    cleanuptempfile($deploykey, "supp");
+    return;
+}
+
+=head2 checkfilecollisions
+
+    Routine that validates that none of the config file locations collide with any other locations
+    specified. If they do, we exit and print what deployments and what file caused the collision.
+
+=cut
+
+sub checkfilecollisions {
+    my $deployref = shift;
+    my $chkref;
+    foreach my $deploykey ( keys %{$deployref} ) {
+        my $deployinfo = $deployref->{$deploykey};
+        if ($deployinfo->{core} == 1) {
+            push(@{$chkref->{$deployinfo->{core_location}}}, "core:" . $deploykey);
+        }
+        if ($deployinfo->{supplemental} == 1) {
+            push(@{$chkref->{$deployinfo->{supp_location}}}, "supplemental:" . $deploykey);
+        }
+    }
+    foreach my $deploylocation ( keys %{$chkref} ) {
+        if (scalar(@{$chkref->{$deploylocation}}) > 1) {
+            print returntime() . " Unable to process NRPE or Supplemental NRPE Configuration files" .
+                " this is due to finding Deployments that have specified the same file location: " .
+                $deploylocation . " :: Deployments:  @{$chkref->{$deploylocation}} \n";
+            exit(1);
+        }
+    }
+    return;
+}
+
+=head2 rollback
+
+    Routine for rolling back all of the files we backed up, so hopefully future runs
+    can complete successfully. Something in the process after moving the files and
+    restarting the daemon broke, this is usually due to insufficient permissions for
+    execution
+
+=cut
+
+sub rollback {
+    my $files = shift;
+    foreach my $file ( keys %{$files} ) {
+        my $backupfile = $files->{$file};
+        move($backupfile, $file);
+    }
+    return;
+}
+
+=head2 cleanbackup
+
+    Routine meant for wiping out the backup files we have created, so there isn't
+    any confusion with what config should be running
+
+=cut
+
+sub cleanbackup {
+    my $files = shift;
+    foreach my $file ( keys %{$files} ) {
+        my $backupfile = $files->{$file};
+        unlink($backupfile);
+    }
+    return;
+}
+
+=head2 handleplugins
+
+    Routine meant to call back / check plugins on the system and update them
+    as needed
+
+=cut
+
+sub handleplugins {
+    my ($deployment,$url,$nrpemode,$version,$pluginref,$hostname) = (@_);
+    if ((ref($pluginref) eq "ARRAY") && (!@$pluginref)) { return; }
+    my @fetchplugins;
+    foreach my $file ( keys %{$pluginref} ) {
+        my $location = decode_base64($pluginref->{$file}->{location});
+        $location .= $pluginref->{$file}->{name};
+        my $currmd5;
+        if (-e $location) {
+            open(FILE, $location) or return 0;
+            my $md5ctx = Digest::MD5->new;
+            $md5ctx->addfile(*FILE);
+            $currmd5 = $md5ctx->hexdigest;
+            close(FILE);
+        } else {
+            push(@fetchplugins, $pluginref->{$file}->{name});
+            next;
+        }
+        if ($currmd5 ne $pluginref->{$file}->{md5}) {
+            push(@fetchplugins, $pluginref->{$file}->{name});
+        }
+    }
+    if (@fetchplugins) {
+        my $response = fetchnrpeplugins($deployment, $url, $nrpemode, $version, $hostname, @fetchplugins);
+        my $plugininfo = decode_json($response);
+        foreach my $file ( keys %{$plugininfo} ) {
+            my $output = createnrpeplugin($plugininfo->{$file});
+            if ($output == 0) {
+                print returntime() . ' Error Creating File ' . $plugininfo->{$file}->{name} . "\n";
+            }
+        }
+    }
+}
+
+=head2 fetchnrpeplugins
+
+    Routine for fetching nrpe plugins from the central saigon system
+
+=cut
+
+sub fetchnrpeplugins {
+    my ($deployment,$url,$actionarg,$version,$hostname,@plugins) = (@_);
+    if ($actionarg eq "core") { $url .= "/getNRPEPlugin"; } 
+    elsif ($actionarg eq "supp") { $url .= "/getSupNRPEPlugin"; }
+    else { return 0; }
+    $url .= '/' . $deployment . '/' . join(",", @plugins);
+    my $interface;
+    my @interfaces = IO::Interface::Simple->interfaces;
+    if (grep $_ eq "xenbr0", @interfaces) {
+        $interface = IO::Interface::Simple->new('xenbr0');
+    } elsif (grep $_ eq "bond0", @interfaces) {
+        $interface = IO::Interface::Simple->new('bond0');
+    } else {
+        $interface = IO::Interface::Simple->new('eth0');
+    }
+    my $ua = LWP::UserAgent->new();
+    $ua->agent('Saigon NRPE Data Fetcher/' . $version . ' (' . $ua->_agent . '/' . $interface->address . ')');
+    $ua->ssl_opts('verify_hostname' => 0);
+    my $response = $ua->post($url);
+    if (!$response->is_success) {
+        return 0;
+    }
+    return $response->content;
+}
+
+=head2 createnrpeplugin
+
+    Routine for creating the nrpe plugin that has been specified
+
+=cut
+
+sub createnrpeplugin {
+    my $pluginref = shift;
+    my $tmpmd5 = "";
+    my $file = decode_base64($pluginref->{location});
+    $file .= $pluginref->{name};
+    my $mode = 0755;
+    eval {
+        # Write the file...
+        open(my $fh, ">", $file) or return 0;
+        print $fh decode_base64($pluginref->{file});
+        close($fh);
+        # Read the file, verify md5 sums...
+        open(FILE, $file) or return 0;
+        my $md5ctx = Digest::MD5->new;
+        $md5ctx->addfile(*FILE);
+        $tmpmd5 = $md5ctx->hexdigest;
+        close(FILE);
+        chmod $mode, $file;
+    };
+    if ($@) { print returntime() . " Error Creating File\n"; return 0; }
+    elsif ($tmpmd5 ne $pluginref->{md5}) { print returntime() . " MD5 Sums Dont Match\n"; return 0; }
+    return 1;
+}
+
+=head2 checkiptables
+
+    Routine for checking if our host is a zcloud-node, iptables is running, as well as iptables
+    having a proper rule inside of the RH-Firewall-1-INPUT Chain... This routine does not restart
+    iptables, it will only inject the rule into the current chain in memory should it not find it.
+
+=cut
+
+sub checkiptables {
+    my $hostnamebin = "/bin/hostname";
+    my $hostname = `$hostnamebin`; chomp($hostname);
+    if ($hostname !~ /^zcloud-node/) {
+        return;
+    }
+    my $iptsbin = "/sbin/iptables-save";
+    my $iptbin = "/sbin/iptables";
+    my $injectrule = "RH-Firewall-1-INPUT -p tcp -m state --state NEW -m tcp --dport 5656 -j ACCEPT";
+    my $chainflag = "missing";
+    my $ruleflag = "inject";
+    my @iptrules = `$iptsbin`;
+    foreach my $iprule ( @iptrules ) {
+        if ($iprule =~ /RH-Firewall-1-INPUT/) {
+            $chainflag = "available";
+        }
+        if ($iprule =~ $injectrule) {
+            $ruleflag = "exists";
+        }
+    }
+    if (($chainflag eq "available") && ($ruleflag eq "inject")) {
+        `$iptbin -I $injectrule`;
+    }
+    return;
+}

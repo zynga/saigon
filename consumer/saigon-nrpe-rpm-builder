@@ -1,0 +1,115 @@
+#!/usr/bin/perl
+#
+#
+# Copyright (c) 2013, Zynga Inc.
+# https://github.com/zynga/saigon
+# Author: Matt West (https://github.com/mhwest13)
+# License: BSD 2-Clause
+#
+
+#
+#  This script runs as a background process looking for a job in beanstalk telling it
+#   to create an rpm for nagconf nrpe callback ini config files.
+#
+
+use strict;
+use warnings;
+use Beanstalk::Client;
+use File::Copy;
+use Getopt::Long;
+use JSON;
+use MIME::Base64;
+
+my $server = "localhost";
+my $builddir = "";
+my @copytodirs = (
+    qw(
+    )
+);
+
+GetOptions(
+    "s|server:s"        => \$server,
+    "bd|builddir:s"     => \$builddir,
+    "cd|copytodirs:s"   => \@copytodirs,
+);
+
+if (!$builddir) {
+    print "Error Unable to Build RPMs, no build directory is specified\n";
+    exit(1);
+}
+elsif (!@copytodirs) {
+    print "Error Unable to detect destination directories to copy RPMs into\n";
+    exit(1);
+}
+
+my $client = Beanstalk::Client->new(
+    {   server          => "$server",
+        default_tube    => "nrperpm",
+    }
+);
+
+while(1) {
+    my $job = $client->reserve;
+    my $jsonref = decode_json($job->data);
+    my $specreturn = createspec($jsonref->{deployment}, $jsonref->{data});
+    if ($specreturn eq 'continue') {
+        my $rpmreturn = createrpm($jsonref->{deployment});
+        if ($rpmreturn eq 'error') {
+            print "Error Creating NRPE RPM Files for " . $jsonref->{deployment} . "\n";
+        } elsif ($rpmreturn eq 'corerpm') {
+            print "Error Creating Core NRPE RPM File for " . $jsonref->{deployment} . "\n";
+        } elsif ($rpmreturn eq 'supprpm') {
+            print "Error Creating Supplemental NRPE RPM File for " . $jsonref->{deployment} . "\n";
+        } else {
+            moverpms($jsonref->{deployment});
+        }
+    } else {
+        print "Error Creating Spec file for " . $jsonref->{deployment} . "\n";
+    }
+    $client->delete($job->id);
+}
+
+sub createspec {
+    my ($deployment, $encdata) = (@_);
+    my $decdata = decode_base64($encdata);
+    my $file = $builddir . '/rpmbuild/SPECS/' . $deployment . '.spec';
+    open(my $fh, '>', $file);
+    print $fh $decdata;
+    close($fh);
+    if (!-e $file) {
+        return 'error';
+    }
+    return 'continue';
+}
+
+sub createrpm {
+    my ($deployment) = (@_);
+    my $specfile = $builddir . '/rpmbuild/SPECS/' . $deployment . '.spec';
+    my $corerpm = $builddir . '/rpmbuild/RPMS/noarch/' . $deployment . '-saigon-nrpe-builder-config-1.0-1.noarch.rpm';
+    my $supprpm = $builddir . '/rpmbuild/RPMS/noarch/' . $deployment . '-saigon-nrpe-builder-config-supplemental-1.0-1.noarch.rpm';
+    my $output = (qx(/usr/bin/rpmbuild -bb $specfile >/dev/null 2>&1));
+    my $exitcode = $? >> 8;
+    if ($exitcode == 1) {
+        return 'error';
+    } elsif (!-e $corerpm) {
+        return 'corerpm';
+    } elsif (!-e $supprpm) {
+        return 'supprpm';
+    }
+    return 'continue';
+}
+
+sub moverpms {
+    my ($deployment) = (@_);
+    my $corerpm = $deployment . '-saigon-nrpe-builder-config-1.0-1.noarch.rpm';
+    my $supprpm = $deployment . '-saigon-nrpe-builder-config-supplemental-1.0-1.noarch.rpm';
+    my $cfrpm = $builddir . '/rpmbuild/RPMS/noarch/' . $corerpm;
+    my $sfrpm = $builddir . '/rpmbuild/RPMS/noarch/' . $supprpm;
+    foreach my $copydir ( @copytodirs ) {
+        copy($cfrpm, $copydir . '/' . $corerpm);
+        copy($sfrpm, $copydir . '/' . $supprpm);
+    }
+    unlink($cfrpm);
+    unlink($sfrpm);
+}
+

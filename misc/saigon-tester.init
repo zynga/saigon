@@ -1,0 +1,24 @@
+#!/bin/sh
+# description: Starts/stops Nagios Tester Consumer
+PID=/opt/saigon/var/run/saigon-tester.pid
+DIR=/opt/saigon/consumer
+
+# See how we were called.
+case "$1" in
+    start)
+        echo -n "Starting Saigon Nagios Test / Build Consumer:  "
+        cd ${DIR}
+        exec 2>&1 php saigon-tester 1>>/opt/saigon/log/saigon-tester.log &
+        ;;
+    stop)
+        CURRPID=`cat ${PID}`
+        echo -n "Stopping Saigon Nagios Test / Build Consumer: "
+        rm -f ${PID}
+        sleep 5
+        kill -QUIT ${CURRPID}
+        ;;
+    *)
+        echo $"Usage: saigon-tester.init {start|stop}"
+        exit
+    esac
+exit 0

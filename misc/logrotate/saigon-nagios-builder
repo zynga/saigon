@@ -1,0 +1,7 @@
+/var/log/saigon/saigon-nagios-builder.log {
+    missingok
+    notifempty
+    daily
+    create 0644 root root
+    rotate 7
+}

@@ -1,0 +1,226 @@
+/*
+ * Colour dictionary:
+ *
+ * Table control elements:   #719ba7
+ * Header cells:             #66A9BD
+ * Body header cells:        #91c5d4
+ * Body content cells:       #d5eaf0
+ * Body content cells (alt): #bcd9e1
+ * Footer header:            #b0cc7f
+ * Footer content:           #d7e1c5
+ */
+
+
+/*
+ * Page setup styles
+ */
+body {
+	/*font: 80%/1.45em Arial, Verdana, Helvetica, sans-serif;*/
+	margin: 0;
+	padding: 0;
+	color: #111;
+	background-color: #fff;
+}
+
+#container {
+	margin: 0 auto;
+	width: 960px
+}
+
+h1 {
+	text-align: center;
+	font-size: 1.2em;
+	font-weight: bold;
+	margin: 1em 0;
+}
+
+
+/*
+ * DataTables framework
+ */
+div.dataTables_wrapper {
+	background-color: #719ba7;
+	-moz-border-radius: 8px;
+	border-radius: 8px;
+	-webkit-border-radius: 8px;
+}
+
+div.dataTables_length {
+	float: left;
+}
+
+div.dataTables_filter {
+	float: right;
+}
+
+div.dataTables_info {
+	padding: 9px 6px 6px 6px;
+	float: left;
+}
+
+div.dataTables_paginate {
+	float: right;
+}
+
+div.dataTables_length,
+div.dataTables_filter,
+div.dataTables_paginate {
+	padding: 6px;
+}
+
+/* Self clearing - http://www.webtoolkit.info/css-clearfix.html */
+.dataTables_wrapper:after {
+	content: ".";
+	display: block;
+	clear: both;
+	visibility: hidden;
+	line-height: 0;
+	height: 0;
+}
+ 
+html[xmlns] .dataTables_wrapper {
+	display: block;
+}
+ 
+* html .dataTables_wrapper {
+	height: 1%;
+}
+
+
+/*
+ * Table styles
+ */
+table.noderesults {
+	width: 100%;
+	clear: both;
+}
+
+table.noderesults td,
+table.noderesults th {
+	padding: 5px;
+	/*border: 1px solid #fff;*/
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	-webkit-border-radius: 4px;
+}
+
+/* Header cells */
+table.noderesults thead th {
+	text-align: center;
+	background: #66a9bd;
+}
+
+/* Body cells */
+table.noderesults tbody th {
+	text-align: left;
+	background: #91c5d4;
+}
+	
+table.noderesults tbody td {
+	text-align: center;
+	background: #d5eaf0;
+}
+		
+table.noderesults tbody tr.odd td { 
+	background: #bcd9e1;
+}
+
+/* Footer cells */	
+table.noderesults tfoot th {
+	background: #b0cc7f;
+	text-align: left;
+}
+	
+table.noderesults tfoot td {
+	background: #d7e1c5;
+	text-align: center;
+	font-weight: bold;
+}
+
+
+/*
+ * Pagination
+ */
+a.paginate_button,
+a.paginate_active {
+	display: inline-block;
+	background-color: #608995;
+	padding: 2px 6px;
+	margin-left: 2px;
+	cursor: pointer;
+	*cursor: hand;
+}
+
+a.paginate_active {
+	background-color: transparent;
+	border: 1px solid black;
+}
+
+a.paginate_button_disabled {
+	color: #3d6672;
+}
+.paging_full_numbers a:active {
+	outline: none
+}
+.paging_full_numbers a:hover {
+	text-decoration: none;
+}
+
+.paginate_button_first {
+	background:url('../imgs/first.png');
+	background-repeat:no-repeat;
+}
+
+.paginate_button_previous {
+	background:url('../imgs/prev.png');
+	background-repeat:no-repeat;
+}
+
+.paginate_button_next {
+	background:url('../imgs/next.png');
+	background-repeat:no-repeat;
+}
+
+.paginate_button_last {
+	background:url('../imgs/last.png');
+	background-repeat:no-repeat;
+}
+
+.paginate_enabled_previous {
+	padding: 0px 15px 0px 15px;
+}
+
+.paginate_disabled_previous {
+	padding: 0px 15px 0px 15px;
+	opacity: 20;
+}
+
+.paginate_enabled_next {
+	padding: 0px 15px 0px 15px;
+}
+
+.paginate_disabled_next {
+	padding: 0px 15px 0px 15px;
+	opacity: 20;
+}
+
+div.dataTables_paginate span>a {
+	width: 15px;
+	text-align: center;
+}
+
+
+/*
+ * Sorting
+ */
+table.noderesults thead th.sorting_asc {
+	background: #66A9BD url('../imgs/sort_asc.png') no-repeat right center;
+}
+
+table.noderesults thead th.sorting_desc {
+	background: #66A9BD url('../imgs/sort_desc.png') no-repeat right center;
+}
+
+table.noderesults thead th.sorting {
+	background: #66A9BD url('../imgs/sort_both.png') no-repeat right center;
+}

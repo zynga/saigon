@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+#
+
+use strict;
+use warnings;
+
+my $firstrun = int(rand(9));
+my $secondrun = $firstrun + 10;
+my $thirdrun = $secondrun + 10;
+my $fourthrun = $thirdrun + 10;
+my $fifthrun = $fourthrun + 10;
+my $sixthrun = $fifthrun + 10;
+my $sleeprand = int(rand(60));
+my $contents = "# Cronjob for Saigon Modgearman Consumer Call Back Execution\n";
+$contents .= "$firstrun,$secondrun,$thirdrun,$fourthrun,$fifthrun,$sixthrun * * * * root sleep $sleeprand; ";
+$contents .= "/opt/saigon/consumer/modgearman-builder ";
+$contents .= ">>/var/log/saigon/modgearman-builder.log\n";
+open (FILE, ">", "/etc/cron.d/saigon-modgearman-consumer");
+print FILE $contents;
+close(FILE);
+
+exit;

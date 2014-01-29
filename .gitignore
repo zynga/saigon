@@ -1,0 +1,8 @@
+composer.phar
+*.swp
+rpms/
+_debian/
+log/
+var/
+vendor/
+.xref/

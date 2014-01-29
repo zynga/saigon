@@ -1,0 +1,7 @@
+check process saigon-tester with pidfile /opt/saigon/var/run/saigon-tester.pid
+    start program "/opt/saigon/misc/saigon-tester.init start"
+        as uid root and gid root
+    stop program  "/opt/saigon/misc/saigon-tester.init stop"
+        as uid root and gid root
+    if totalmem > 50% then restart
+    if uptime > 4 hours then restart
