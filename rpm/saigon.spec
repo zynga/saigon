@@ -1,6 +1,6 @@
 Name:          saigon
 Version:       1.0
-Release:       1%{?dist}
+Release:       2%{?dist}
 Summary:       Saigon : Centralized Nagios Configuration System
 Group:         Applications/Systems
 License:       BSD
@@ -234,36 +234,56 @@ for the various deployments. This consumer leverages beanstalkd as a job queue.
 %post
 
 %post nagios-consumer
-%{os_dir}/misc/cronjobs/create-saigon-builder-crontab &>/dev/null ||:
+if [ "$1" = 1 ]; then
+    %{os_dir}/misc/cronjobs/create-saigon-builder-crontab &>/dev/null ||:
+fi
 
 %post nrpe-consumer
-%{os_dir}/misc/cronjobs/create-saigon-nrpe-builder-crontab &>/dev/null ||:
+if [ "$1" = 1 ]; then
+    %{os_dir}/misc/cronjobs/create-saigon-nrpe-builder-crontab &>/dev/null ||:
+fi
 
 %post modgearman-consumer
-%{os_dir}/misc/cronjobs/create-saigon-modgearman-builder-crontab &>/dev/null ||:
+if [ "$1" = 1 ]; then
+    %{os_dir}/misc/cronjobs/create-saigon-modgearman-builder-crontab &>/dev/null ||:
+fi
 
 %post nagiosplugin-consumer
-%{os_dir}/misc/cronjobs/create-saigon-nagiosplugin-builder-crontab &>/dev/null ||:
+if [ "$1" = 1 ]; then
+    %{os_dir}/misc/cronjobs/create-saigon-nagiosplugin-builder-crontab &>/dev/null ||:
+fi
 
 %post nagiostest-consumer
-ln -s %{os_dir}/misc/saigon-tester.monitrc /etc/monit.d/saigon-tester.monitrc ||:
+if [ "$1" = 1 ]; then
+    ln -s %{os_dir}/misc/saigon-tester.monitrc /etc/monit.d/saigon-tester ||:
+fi
 
 %postun
 
 %postun nagios-consumer
-%{__rm} -f /etc/cron.d/saigon-nagios-builder ||:
+if [ "$1" = 0 ]; then
+    %{__rm} -f /etc/cron.d/saigon-nagios-builder ||:
+fi
 
 %postun nrpe-consumer
-%{__rm} -f /etc/cron.d/saigon-nrpe-builder ||:
+if [ "$1" = 0 ]; then
+    %{__rm} -f /etc/cron.d/saigon-nrpe-builder ||:
+fi
 
 %postun modgearman-consumer
-%{__rm} -f /etc/cron.d/saigon-modgearman-consumer ||:
+if [ "$1" = 0 ]; then
+    %{__rm} -f /etc/cron.d/saigon-modgearman-consumer ||:
+fi
 
 %postun nagiosplugin-consumer
-%{__rm} -f /etc/cron.d/saigon-nagiosplugin-builder ||:
+if [ "$1" = 0 ]; then
+    %{__rm} -f /etc/cron.d/saigon-nagiosplugin-builder ||:
+fi
 
 %postun nagiostest-consumer
-%{__rm} -f /etc/monit.d/saigon-tester.monitrc ||:
+if [ "$1" = 0 ]; then
+    %{__rm} -f /etc/monit.d/saigon-tester ||:
+fi
 
 %clean
 [ "%{buildroot}" != "/" ] && %{__rm} -rf %{buildroot}
@@ -355,5 +375,8 @@ ln -s %{os_dir}/misc/saigon-tester.monitrc /etc/monit.d/saigon-tester.monitrc ||
 %{os_dir}/consumer/saigon-nrpe-rpm-builder
 
 %changelog
+* Sat Feb 15 2014 Matt West <mwest@zynga.com> - 1.0-2
+- Bugfixes
+
 * Tue Nov 12 2013 Matt West <mwest@zynga.com> - 1.0-1
 - Initial Public Release

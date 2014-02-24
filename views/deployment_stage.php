@@ -41,6 +41,13 @@ if ((isset($viewData->deployments)) && (!empty($viewData->deployments))) {
 ?>
                 <a class="deployBtn" title="Modify Deployment Information" href="action.php?controller=deployment&action=modify_stage&deployment=<?php echo $deployment?>">Modify</a>
                 <a class="deployBtn" title="Delete Deployment Information" href="action.php?controller=deployment&action=del_stage&deployment=<?php echo $deployment?>">Delete</a>
+<?php
+            if (BUILD_NRPERPM === true) {
+?>
+                <a class="deployBtn" title="Build NRPE RPM" href="action.php?controller=deployment&action=build_nrpe_rpm&deployment=<?php echo $deployment?>">Build RPM</a>
+<?php
+            }
+?>
                 <div class="divCacGroup"></div>
                 <a class="deployBtn" title="Show Nagios Configuration Files" href="action.php?controller=deployment&action=show_configs_stage&deployment=<?php echo $deployment?>">Show Configs</a>
                 <a class="deployBtn" title="Test Nagios Configuration Files" href="action.php?controller=deployment&action=test_configs_stage&deployment=<?php echo $deployment?>">Test Configs</a>

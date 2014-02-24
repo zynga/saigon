@@ -204,7 +204,7 @@ class DeploymentController extends Controller
         }
         $_SESSION[$deployment]['deployments'] = $deployHostSearches;
         $_SESSION[$deployment]['static-deployments'] = $deployStaticHosts;
-        if (($return = $this->checkGroupAuth(SUPERMEN)) === false) {
+        if (($return = $this->checkGroupAuth(SUPERMEN, true)) === false) {
             $viewData->notsupermen = true;
         }
         $viewData->deployInfo = $deployInfo;
@@ -1041,6 +1041,28 @@ class DeploymentController extends Controller
         sort($resulthosts);
         $viewData = $resulthosts;
         $this->sendResponse('deployment_view_dynamic_matches', $viewData);
+    }
+
+    public function build_nrpe_rpm()
+    {
+        $viewData = new ViewData();
+        $this->checkGroupAuth(SUPERMEN);
+        $deployment = $this->getDeployment('deployment_error');
+        $deployInfo = RevDeploy::getDeploymentInfo($deployment);
+        if (BUILD_NRPERPM === true) {
+            if ($deployInfo['deploystyle'] == 'both' || $deployInfo['deploystyle'] == 'nrpe') {
+                $filecontents = NRPERpm::createSpec($deployment);
+                NagPhean::init(BEANSTALKD_SERVER, 'nrperpm', true);
+                NagPhean::addJob('nrperpm',
+                    json_encode(array('deployment' => $deployment, 'data' => $filecontents)),
+                    1024, 0, 60);
+            }
+            $viewData->status = "success";
+        }
+        else {
+            $viewData->status = "inactive";
+        }
+        $this->sendResponse('deployment_build_nrpe_rpm', $viewData);
     }
 
 }

@@ -39,7 +39,7 @@ $svcChkFreshness = isset($viewData->svcInfo['check_freshness'])?$viewData->svcIn
 $svcChkFreshInt = isset($viewData->svcInfo['freshness_threshold'])?$viewData->svcInfo['freshness_threshold']:'';
 $svcNotesUrl = isset($viewData->svcInfo['notes_url'])?$viewData->svcInfo['notes_url']:'';
 $svcActionUrl = isset($viewData->svcInfo['action_url'])?$viewData->svcInfo['action_url']:'';
-$svcEvtHandEn = isset($viewData->svcInfo['event_handler_enabled'])?$viewData->svcInfo['event_handler_enabled']:'';
+$svcEvtHandEn = isset($viewData->svcInfo['event_handler_enabled'])?$viewData->svcInfo['event_handler_enabled']:'-1';
 $svcEHCommand = isset($viewData->svcInfo['event_handler'])?$viewData->svcInfo['event_handler']:'';
 
 $svcCArg1 = isset($viewData->svcInfo['carg1'])?$viewData->svcInfo['carg1']:'';
@@ -396,12 +396,13 @@ foreach ($states as $stateKey => $state) {
                             <select id="ppdata" name="ppdata" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if ($svcPPData == 0) {
+if (preg_match("/^0$/", $svcPPData)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($svcPPData == 1) {
+}
+else if (preg_match("/^1$/", $svcPPData)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -421,12 +422,13 @@ if ($svcPPData == 0) {
                             <select id="retstatusinfo" name="retstatusinfo" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if ($svcRetStatusInfo == 0) {
+if (preg_match("/^0$/", $svcRetStatusInfo)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($svcRetStatusInfo == 1) {
+}
+else if (preg_match("/^1$/", $svcRetStatusInfo)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -445,12 +447,13 @@ if ($svcRetStatusInfo == 0) {
                             <select id="retnstatusinfo" name="retnstatusinfo" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if ($svcRetNStatusInfo == 0) {
+if (preg_match("/^0$/", $svcRetNStatusInfo)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($svcRetNStatusInfo == 1) {
+} 
+else if (preg_match("/^1$/", $svcRetNStatusInfo)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -563,12 +566,13 @@ foreach ($chkInts as $chkTime => $chkVal) {
                             <select id="activechk" name="activechk" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if ($svcActChks == 0) {
+if (preg_match("/^0$/", $svcActChks)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($svcActChks == 1) {
+}
+else if (preg_match("/^1$/", $svcActChks)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -588,12 +592,13 @@ if ($svcActChks == 0) {
                             <select id="passivechk" name="passivechk" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if ($svcPsvChks == 0) {
+if (preg_match("/^0$/", $svcPsvChks)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($svcPsvChks == 1) {
+}
+else if (preg_match("/^1$/", $svcPsvChks)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -675,12 +680,13 @@ foreach ($viewData->contactgroups as $contactGroup => $cgArray) {
                             <select id="notifenabled" name="notifenabled" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if ($svcNotifEn == 0) {
+if (preg_match("/^0$/", $svcNotifEn)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if($svcNotifEn == 1) {
+}
+else if (preg_match("/^1$/", $svcNotifEn)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -762,12 +768,13 @@ foreach ($viewData->timeperiods as $timePeriod => $tpArray) {
                             <select id="checkfreshness" name="checkfreshness" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if ($svcChkFreshness == 0) {
+if (preg_match("/^0$/", $svcChkFreshness)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if($svcChkFreshness == 1) {
+}
+else if (preg_match("/^1$/", $svcChkFreshness)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -786,7 +793,7 @@ if ($svcChkFreshness == 0) {
                             <select id="chkfreshinterval" name="chkfreshinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('15' => '15 Mins', '30' => '30 Mins', '60' => '1 Hour', '120' => '2 Hours', '240' => '4 Hours', '480' => '8 Hours');
+$chkInts = array('900' => '15 Mins', '1800' => '30 Mins', '3600' => '1 Hour', '7200' => '2 Hours', '14400' => '4 Hours', '28800' => '8 Hours');
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $svcChkFreshInt) {
 ?>
@@ -851,12 +858,13 @@ foreach ($viewData->svcgroups as $svcGroup => $sgArray) {
                             <select id="ehenabled" name="ehenabled" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if ($svcEvtHandEn == 0) {
+if (preg_match("/^0$/", $svcEvtHandEn)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if($svcEvtHandEn == 1) {
+}
+else if (preg_match("/^1$/", $svcEvtHandEn)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>

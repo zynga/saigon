@@ -108,7 +108,6 @@ class SvcController extends Controller {
             $viewData->deployment = $deployment;
             $this->sendResponse('svc_action_stage', $viewData);
         }
-        if (!isset($svcInfo['check_freshness'])) $svcInfo['check_freshness'] = 0;
         $svcInfo['parallelize_check'] = 1;
         $svcInfo['is_volatile'] = 0;
         return $svcInfo;

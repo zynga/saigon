@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 #
 # Copyright (c) 2013, Zynga Inc.
@@ -114,7 +114,7 @@ sub cleanuptempfile {
 
 sub execposthook {
     my $posthook = shift;
-    return system($posthook . ' 2&>/dev/null 1&>/dev/null');
+    return system($posthook . ' 2>&1 >/dev/null');
 }
 
 =head2 addexecposthook

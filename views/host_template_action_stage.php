@@ -325,12 +325,13 @@ foreach ($states as $stateKey => $state) {
                             <select id="ppdata" name="ppdata" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if (($hostPPData == 0) && (!empty($hostPPData))) {
+if (preg_match("/^0$/", $hostPPData)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($hostPPData == 1) {
+}
+else if (preg_match("/^1$/", $hostPPData)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -350,12 +351,13 @@ if (($hostPPData == 0) && (!empty($hostPPData))) {
                             <select id="retstatusinfo" name="retstatusinfo" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if (($hostRetStatusInfo == 0) && (!empty($hostRetStatusInfo))) {
+if (preg_match("/^0$/", $hostRetStatusInfo)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($hostRetStatusInfo == 1) {
+}
+else if (preg_match("/^1$/", $hostRetStatusInfo)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -374,12 +376,13 @@ if (($hostRetStatusInfo == 0) && (!empty($hostRetStatusInfo))) {
                             <select id="retnstatusinfo" name="retnstatusinfo" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if (($hostRetNStatusInfo == 0) && (!empty($hostRetNStatusInfo))) {
+if (preg_match("/^0$/", $hostRetNStatusInfo)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($hostRetNStatusInfo == 1) {
+}
+else if (preg_match("/^1$/", $hostRetNStatusInfo)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -492,12 +495,13 @@ foreach ($chkInts as $chkTime => $chkVal) {
                             <select id="activechk" name="activechk" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if (($hostActChks == 0) && (!empty($hostActChks))) {
+if (preg_match("/^0$/", $hostActChks)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($hostActChks == 1) {
+}
+else if (preg_match("/^1$/", $hostActChks)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -517,12 +521,13 @@ if (($hostActChks == 0) && (!empty($hostActChks))) {
                             <select id="passivechk" name="passivechk" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if (($hostPsvChks == 0) && (!empty($hostPsvChks))) {
+if (preg_match("/^0$/", $hostPsvChks)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($hostPsvChks == 1) {
+}
+else if (preg_match("/^1$/", $hostPsvChks)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -604,12 +609,13 @@ foreach ($viewData->contactgroups as $contactGroup => $cgArray) {
                             <select id="notifenabled" name="notifenabled" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if (($hostNotifEn == 0) && (!empty($hostNotifEn))) {
+if (preg_match("/^0$/", $hostNotifEn)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if($hostNotifEn == 1) {
+}
+else if (preg_match("/^1$/", $hostNotifEn)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>

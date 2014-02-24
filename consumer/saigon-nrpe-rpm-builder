@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 #
 # Copyright (c) 2013, Zynga Inc.
@@ -87,7 +87,7 @@ sub createrpm {
     my $specfile = $builddir . '/rpmbuild/SPECS/' . $deployment . '.spec';
     my $corerpm = $builddir . '/rpmbuild/RPMS/noarch/' . $deployment . '-saigon-nrpe-builder-config-1.0-1.noarch.rpm';
     my $supprpm = $builddir . '/rpmbuild/RPMS/noarch/' . $deployment . '-saigon-nrpe-builder-config-supplemental-1.0-1.noarch.rpm';
-    my $output = (qx(/usr/bin/rpmbuild -bb $specfile >/dev/null 2>&1));
+    my $output = (qx(/usr/bin/rpmbuild -bb $specfile 2>&1 >/dev/null));
     my $exitcode = $? >> 8;
     if ($exitcode == 1) {
         return 'error';

@@ -61,8 +61,10 @@ class SvcTempController extends Controller {
                 case 'chkfreshinterval':
                     $svcInfo['freshness_threshold'] = $value; break;
                 case 'ehcmd':
+                    if ($value === false) break;
                     $svcInfo['event_handler'] = $value; break;
                 case 'ehenabled':
+                    if ($value === false) break;
                     $svcInfo['event_handler_enabled'] = $value; break;
                 default:
                     break;
@@ -100,7 +102,6 @@ class SvcTempController extends Controller {
             $viewData->deployment = $deployment;
             $this->sendResponse('svc_template_action_stage', $viewData);
         }
-        if (!isset($svcInfo['check_freshness'])) $svcInfo['check_freshness'] = 0;
         $svcInfo['parallelize_check'] = 1;
         $svcInfo['is_volatile'] = 0;
         $svcInfo['register'] = 0;

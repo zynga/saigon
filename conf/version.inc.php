@@ -7,6 +7,6 @@
 //
 
 /* Define Version number */
-define('VERSION', '1.0-1');
-define('API_VERSION', '0.1-1');
+define('VERSION', '1.0-2');
+define('API_VERSION', '0.1-2');
 

@@ -95,13 +95,21 @@ class CMDBParentChild implements HostAPI
                 $results[$host]['parents'] = $fields['cfacts.parent'];
             }
 
-            if ($state == 'active') {
-                $results[$host]['icon_image'] = 'linux40.png';
-                $results[$host]['icon_image_alt'] = 'Active / Operating';
+            if ($mode == 'physical') {
+                if ($state == 'active') {
+                    $results[$host]['icon_image'] = 'linux40.png';
+                    $results[$host]['icon_image_alt'] = 'Active / Operating';
+                }
+                elseif ($state == 'active_repair') {
+                    $results[$host]['icon_image'] = 'ignore_me.png';
+                    $results[$host]['icon_image_alt'] = 'Active Repair / Ignore Me!!';
+                }
             }
-            elseif ($state == 'active_repair') {
-                $results[$host]['icon_image'] = 'ignore_me.png';
-                $results[$host]['icon_image_alt'] = 'Active Repair / Ignore Me!!';
+            elseif ($mode == 'virtual') {
+                if ($state == 'active') {
+                    $results[$host]['icon_image'] = 'xen.png';
+                    $results[$host]['icon_image_alt'] = 'Active / Operating';
+                }
             }
         }
         return $results;

@@ -201,12 +201,13 @@ foreach ($viewData->contacttemplates as $ctemplate => $ctArray) {
                             <select id="hostnotifenabled" name="hostnotifenabled" multiple="multiple" <?php echo isset($copyToFlag)?'disabled':''?>>
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if ($contactHostNotifEn == 0) {
+if (preg_match("/^0$/", $contactHostNotifEn)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($contactHostNotifEn == 1) {
+}
+else if (preg_match("/^1$/", $contactHostNotifEn)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>
@@ -287,12 +288,13 @@ foreach ($viewData->notifycmds as $cmd) {
                             <select id="svcnotifenabled" name="svcnotifenabled" multiple="multiple" <?php echo isset($copyToFlag)?'disabled':''?>>
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-if ($contactSvcNotifEn == 0) {
+if (preg_match("/^0$/", $contactSvcNotifEn)) {
 ?>
                                 <option value="on">On</option>
                                 <option value="off" selected>Off</option>
 <?php
-} else if ($contactSvcNotifEn == 1) {
+}
+else if (preg_match("/^1$/", $contactSvcNotifEn)) {
 ?>
                                 <option value="on" selected>On</option>
                                 <option value="off">Off</option>

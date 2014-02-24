@@ -221,6 +221,7 @@ class NagHelpers {
         $hosts = $this->getCache()->getHosts();
         $results = array();
         $roundtwo = array();
+        if (self::$enableSharding === false) return $hosts;
         foreach ($hosts as $host => $hostdata) {
             if ((isset($hostdata['parents'])) && (!empty($hostdata['parents']))) {
                 $roundtwo[$host] = $hostdata;
@@ -253,9 +254,10 @@ class NagHelpers {
     }
 
     public function returnServices($hostCache) {
+        $services = $this->getCache()->getSvcs();
+        if (self::$enableSharding === false) return $services;
         $hosts = array_keys($hostCache);
         $hostgroups = $this->buildHostGroups($hosts, $hostCache);
-        $services = $this->getCache()->getSvcs();
         foreach ($services as $service => $svcData) {
             if ((isset($svcData['host_name'])) && (!empty($svcData['host_name']))) {
                 $scrubbed = array();
@@ -297,9 +299,10 @@ class NagHelpers {
     }
 
     public function returnServiceDependencies($hostCache) {
+        $servicedeps = $this->getCache()->getSvcDependencies();
+        if (self::$enableSharding === false) return $servicedeps;
         $hosts = array_keys($hostCache);
         $hostgroups = $this->buildHostGroups($hosts, $hostCache);
-        $servicedeps = $this->getCache()->getSvcDependencies();
         foreach ($servicedeps as $servicedep => $svcdepData) {
             if ((isset($svcdepData['host_name'])) && (!empty($svcdepData['host_name']))) {
                 $scrubbed = array();
@@ -341,9 +344,10 @@ class NagHelpers {
     }
 
     public function returnServiceEscalations($hostCache) {
+        $serviceescs = $this->getCache()->getSvcEscalations();
+        if (self::$enableSharding === false) return $serviceescs;
         $hosts = array_keys($hostCache);
         $hostgroups = $this->buildHostGroups($hosts, $hostCache);
-        $serviceescs = $this->getCache()->getSvcEscalations();
         foreach ($serviceescs as $serviceesc => $svcescData) {
             if ((isset($svcescData['host_name'])) && (!empty($svcescData['host_name']))) {
                 $scrubbed = array();

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 #
 # Copyright (c) 2013, Zynga Inc.
@@ -133,14 +133,14 @@ sub execposthook {
     my $configref = shift;
     my ( $nebrestart, $wrkrestart ) = 0;
     if ( $configref->{mode} =~ /neb|both/ ) {
-        system($configref->{neb_posthook} . ' 2&>/dev/null 1&>/dev/null');
+        system($configref->{neb_posthook} . ' 2>&1 >/dev/null');
         $nebrestart = $? >> 8;
     }
     else {
         $nebrestart = 1;
     }
     if ( $configref->{mode} =~ /worker|both/ ) {
-        system($configref->{worker_posthook} . ' 2&>/dev/null 1&>/dev/null');
+        system($configref->{worker_posthook} . ' 2>&1 >/dev/null');
         $wrkrestart = $? >> 8;
     }
     else {
