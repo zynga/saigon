@@ -88,7 +88,7 @@ function hosttemplate_validate ($app, $deployment, $hostTemplateInfo) {
             case "hostgroups":
             case "parents":
                 if (is_array($value)) $value = implode(',', $value);
-                validateForbiddenChars($app, $deployment, '/[^\w.-,]/s', $key, $value); break;
+                validateForbiddenChars($app, $deployment, '/[^\w.-]/s', $key, $value); break;
             default:
                 break;
         }

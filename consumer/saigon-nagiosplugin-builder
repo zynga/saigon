@@ -156,7 +156,7 @@ sub fetchnagiospluginlist {
     my $ua = LWP::UserAgent->new();
     $ua->agent('Saigon Nagios Plugin Fetcher/' . $version . ' (' . $ua->_agent . '/' . $interface->address . ')');
     $ua->ssl_opts('verify_hostname' => 0);
-    my $response = $ua->post($url);
+    my $response = $ua->get($url);
     if ($response->is_error) {
         return 0;
     }
@@ -184,8 +184,8 @@ sub fetchnagiosplugins {
     my $ua = LWP::UserAgent->new();
     $ua->agent('Saigon Nagios Plugin Fetcher/' . $version . ' (' . $ua->_agent . '/' . $interface->address . ')');
     $ua->ssl_opts('verify_hostname' => 0);
-    my $response = $ua->post($url);
-    if (!$response->is_success) {
+    my $response = $ua->get($url);
+    if ($response->is_error) {
         return 0;
     }
     return $response->content;

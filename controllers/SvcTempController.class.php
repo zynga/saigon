@@ -9,7 +9,7 @@
 class SvcTempController extends Controller {
 
     private function fetchSvcTemplateInfo($deployment, $action, $modrevision) {
-        $keys = array('checkcmd', 'initstate', 'maxchkatts', 'chkinterval', 'chkretryinterval', 'activechk', 'passivechk', 'chkperiod', 'ppdata', 'retstatusinfo', 'retnstatusinfo', 'contacts', 'contactgrps', 'notifenabled', 'notifinterval', 'notifperiod', 'notifopts', 'checkfreshness', 'chkfreshinterval', 'ehcmd', 'ehenabled');
+        $keys = array('checkcmd', 'initstate', 'maxchkatts', 'chkinterval', 'chkretryinterval', 'activechk', 'passivechk', 'chkperiod', 'ppdata', 'retstatusinfo', 'retnstatusinfo', 'contacts', 'contactgrps', 'notifenabled', 'notifinterval', 'notifperiod', 'notifopts', 'checkfreshness', 'chkfreshinterval', 'ehcmd', 'ehenabled', 'svcgrp');
         $svcInfo = array();
         $svcInfo['name'] = $this->getParam('svcName');
         $svcInfo['alias'] = $this->getParam('svcAlias');
@@ -66,6 +66,8 @@ class SvcTempController extends Controller {
                 case 'ehenabled':
                     if ($value === false) break;
                     $svcInfo['event_handler_enabled'] = $value; break;
+                case 'svcgrp':
+                    $svcInfo['servicegroups'] = $value; break;
                 default:
                     break;
             }
@@ -85,6 +87,7 @@ class SvcTempController extends Controller {
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
+            $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
             $viewData->action = $action;
             $viewData->deployment = $deployment;
             $this->sendResponse('svc_template_action_stage', $viewData);
@@ -93,6 +96,7 @@ class SvcTempController extends Controller {
             $viewData = new ViewData();
             $viewData->error = 'Unable to use service template name specified, detected forbidden characters "'.implode('', array_unique($forbidden[0])).'"';
             $viewData->svcInfo = $svcInfo;
+            $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
             $viewData->svctemplates = RevDeploy::getCommonMergedDeploymentSvcTemplates($deployment, $modrevision);
             $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
@@ -126,6 +130,7 @@ class SvcTempController extends Controller {
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
+        $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->action = 'add_write';
         $this->sendResponse('svc_template_action_stage', $viewData);
@@ -150,6 +155,7 @@ class SvcTempController extends Controller {
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
+            $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
             $viewData->svcInfo = $svcInfo;
             $this->sendResponse('svc_template_action_stage', $viewData);
         }
@@ -178,6 +184,7 @@ class SvcTempController extends Controller {
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
+        $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->svctemplate = $svcTemplate;
         $viewData->action = 'modify_write';
@@ -255,6 +262,7 @@ class SvcTempController extends Controller {
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
+        $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->svctemplate = $svcTemplate;
         $viewData->action = 'copy_write';
@@ -279,6 +287,7 @@ class SvcTempController extends Controller {
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
+        $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->svctemplate = $svcTemplate;
         $viewData->action = 'copy_write';
@@ -303,6 +312,7 @@ class SvcTempController extends Controller {
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
+            $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
             $viewData->svcInfo = $svcInfo;
             $this->sendResponse('svc_template_action_stage', $viewData);
         }

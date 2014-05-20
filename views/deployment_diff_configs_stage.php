@@ -38,6 +38,11 @@ $(function() {
         .multiselect({
             selectedList: 1,
             multiple: false,
+        }).multiselectfilter(),
+    $("#shard")
+        .multiselect({
+            selectedList: 1,
+            multiple: false,
         }).multiselectfilter();
 });
 </script>
@@ -124,7 +129,25 @@ foreach ($subdeployments as $subdeploy) {
 }
 ?>
                 </select>
-                <div></div>
+<?php
+if ($viewData->deploymentinfo['ensharding'] == 'on') {
+?>
+                <div class="divCacGroup"></div>
+                Please choose a Shard you would like to diff...<br />
+                <select id="shard" name="shard" multiple="multiple">
+                    <option value="" selected>Select Optional Shard</option>
+<?php
+    for ($i=1;$i<=$viewData->deploymentinfo['shardcount'];$i++) {
+?>
+                    <option value="<?php echo $i?>">Shard <?php echo $i?></option>
+<?php
+    }
+?>
+                </select>
+<?php
+}
+?>
+                <div class="divCacGroup"></div>
                 <input type="submit" value="Submit" style="font-size:14px;padding:5px;" />
             </form>
         </div>

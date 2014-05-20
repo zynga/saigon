@@ -49,13 +49,13 @@ function sighandler($signal)
  * @access public
  * @return void
  */
-function testBuild($deployment, $revision, $subdeployment = false)
+function testBuild($deployment, $revision, $subdeployment = false, $shardposition)
 {
     $starttime = time();
     if (($subdeployment !== false) && (!empty($subdeployment))) {
         NagCreate::setSubDeployment($subdeployment);
     }
-    $buildReturn = NagCreate::buildDeployment($deployment, $revision);
+    $buildReturn = NagCreate::buildDeployment($deployment, $revision, false, true, $shardposition);
     if ($buildReturn !== true) {
         $buildOutput['starttime'] = $starttime;
         $buildOutput['timestamp'] = time();
@@ -64,7 +64,8 @@ function testBuild($deployment, $revision, $subdeployment = false)
         $buildOutput['subdeployment'] = $subdeployment;
         NagTester::setDeploymentTestInfo($deployment, $subdeployment, $revision, $buildOutput);
         unset($buildOutput, $buildReturn);
-    } else {
+    }
+    else {
         $testReturn = NagCreate::testDeployment($deployment);
         $testReturn['starttime'] = $starttime;
         $testReturn['timestamp'] = time();
@@ -87,13 +88,13 @@ function testBuild($deployment, $revision, $subdeployment = false)
  * @access public
  * @return void
  */
-function showBuild($deployment, $revision, $subdeployment = false)
+function showBuild($deployment, $revision, $subdeployment = false, $shardposition = false)
 {
     $starttime = time();
     if (($subdeployment !== false) && (!empty($subdeployment))) {
         NagCreate::setSubDeployment($subdeployment);
     }
-    $buildReturn = NagCreate::buildDeployment($deployment, $revision, false, true);
+    $buildReturn = NagCreate::buildDeployment($deployment, $revision, false, true, $shardposition);
     if ($buildReturn !== true) {
         $buildOutput['starttime'] = $starttime;
         $buildOutput['timestamp'] = time();
@@ -102,7 +103,8 @@ function showBuild($deployment, $revision, $subdeployment = false)
         $buildOutput['subdeployment'] = $subdeployment;
         NagTester::setDeploymentBuildInfo($deployment, $subdeployment, $revision, $buildOutput);
         unset($buildOutput, $buildReturn);
-    } else {
+    }
+    else {
         $configOutput['configs'] = json_encode(NagCreate::returnDeploymentConfigs($deployment));
         $configOutput['starttime'] = $starttime;
         $configOutput['timestamp'] = time();
@@ -126,14 +128,14 @@ function showBuild($deployment, $revision, $subdeployment = false)
  * @access public
  * @return void
  */
-function diffBuild($deployment, $fromrev, $torev, $subdeployment = false)
+function diffBuild($deployment, $fromrev, $torev, $subdeployment = false, $shardposition = false)
 {
     $results = array();
     $starttime = time();
     if (($subdeployment !== false) && (!empty($subdeployment))) {
         NagCreate::setSubDeployment($subdeployment);
     }
-    $return = NagDiff::buildDiffRevisions($deployment, $subdeployment, $fromrev, $torev);
+    $return = NagDiff::buildDiffRevisions($deployment, $subdeployment, $fromrev, $torev, $shardposition);
     if ($return === false) {
         $results['output'] = base64_encode(NagDiff::getOutput());
         $results['starttime'] = $starttime;
@@ -143,7 +145,8 @@ function diffBuild($deployment, $fromrev, $torev, $subdeployment = false)
         $results['status'] = 'failed';
         $results['subdeployment'] = $subdeployment;
         NagTester::setDeploymentDiffInfo($deployment, $subdeployment, $results);
-    } else {
+    }
+    else {
         $results['configs'] = json_encode(NagDiff::getResults());
         $results['starttime'] = $starttime;
         $results['timestamp'] = time();
@@ -154,6 +157,55 @@ function diffBuild($deployment, $fromrev, $torev, $subdeployment = false)
         NagTester::setDeploymentDiffInfo($deployment, $subdeployment, $results);
     }
     unset($starttime, $results, $return);
+}
+
+function hostaudit($deployment)
+{
+    $revision = RevDeploy::getDeploymentRev($deployment);
+    $buildReturn = NagCreate::buildDeployment($deployment, $revision, false, true, false);
+    if ($buildReturn !== true) {
+        $naglogger = new NagLogger();
+        $naglogger->addToLog("Unable to properly build deployment: $deployment :: reason: $buildReturn");
+        unset($buildReturn);
+    }
+    else {
+        $testReturn = NagCreate::testDeployment($deployment);
+        $results = array();
+        $results['last_updated'] = time();
+        $results['hosts_without_services'] = array();
+        $results['hosts_without_services']['count'] = 0;
+        $results['hosts_without_services']['hosts'] = array();
+        $results['hosts_without_contacts'] = array();
+        $results['hosts_without_contacts']['count'] = 0;
+        $results['hosts_without_contacts']['hosts'] = array();
+        $results['services_without_contacts'] = array();
+        $results['services_without_contacts']['count'] = 0;
+        foreach ($testReturn['output'] as $index => $line) {
+            if (preg_match("/Warning: Host '(.+)' has no services associated with it!/", $line, $matches)) {
+                ++$results['hosts_without_services']['count'];
+                array_push($results['hosts_without_services']['hosts'], $matches[1]);
+            }
+            elseif (preg_match("/Warning: Host '(.+)' has no default contacts or contactgroups defined!/", $line, $matches)) {
+                ++$results['hosts_without_contacts']['count'];
+                array_push($results['hosts_without_contacts']['hosts'], $matches[1]);
+            }
+            elseif (preg_match("/Warning: Service '(.+)' on host '(.+)' has no default contacts or contactgroups defined!/", $line, $matches)) {
+                $key = preg_replace("/\W+/", "_", strtolower($matches[1]));
+                $key = trim($key, "_");
+                if ((!isset($results['services_without_contacts'][$key])) || (!is_array($results['services_without_contacts'][$key]))) {
+                    ++$results['services_without_contacts']['count'];
+                    $results['services_without_contacts'][$key] = array();
+                    $results['services_without_contacts'][$key]['count'] = 0;
+                    $results['services_without_contacts'][$key]['hosts'] = array();
+                }
+                ++$results['services_without_contacts'][$key]['count'];
+                array_push($results['services_without_contacts'][$key]['hosts'], $matches[2]);
+            }
+        }
+        NagTester::setDeploymentHostAuditInfo($deployment, json_encode($results));
+        unset($testReturn, $buildReturn);
+    }
+    return;
 }
 
 /**
@@ -184,27 +236,34 @@ while ($run) {
         NagRedis::init(true);
         $lockReturn = NagTester::setDeploymentTestLock($jsonObj->deployment, $jsonObj->subdeployment, $jsonObj->revision);
         if ($lockReturn !== false) {
-            testBuild($jsonObj->deployment, $jsonObj->revision, $jsonObj->subdeployment);
+            testBuild($jsonObj->deployment, $jsonObj->revision, $jsonObj->subdeployment, $jsonObj->shard);
             NagPhean::delJob($job);
             NagTester::deleteDeploymentTestLock($jsonObj->deployment, $jsonObj->subdeployment, $jsonObj->revision);
         }
         unset($lockReturn);
-    } elseif ($jsonObj->type == 'build') {
+    }
+    elseif ($jsonObj->type == 'build') {
         NagRedis::init(true);
         $lockReturn = NagTester::setDeploymentBuildLock($jsonObj->deployment, $jsonObj->subdeployment, $jsonObj->revision);
         if ($lockReturn !== false) {
-            showBuild($jsonObj->deployment, $jsonObj->revision, $jsonObj->subdeployment);
+            showBuild($jsonObj->deployment, $jsonObj->revision, $jsonObj->subdeployment, $jsonObj->shard);
             NagPhean::delJob($job);
             NagTester::deleteDeploymentBuildLock($jsonObj->deployment, $jsonObj->subdeployment, $jsonObj->revision);
         }
         unset($lockReturn);
-    } elseif ($jsonObj->type == 'diff') {
+    }
+    elseif ($jsonObj->type == 'diff') {
         $lockReturn = NagTester::setDeploymentDiffLock($jsonObj->deployment, $jsonObj->subdeployment);
         if ($lockReturn !== false) {
-            diffBuild($jsonObj->deployment, $jsonObj->fromrev, $jsonObj->torev, $jsonObj->subdeployment);
+            diffBuild($jsonObj->deployment, $jsonObj->fromrev, $jsonObj->torev, $jsonObj->subdeployment, $jsonObj->shard);
             NagPhean::delJob($job);
             NagTester::deleteDeploymentDiffLock($jsonObj->deployment, $jsonObj->subdeployment);
         }
+    }
+    elseif ($jsonObj->type == 'hostaudit') {
+        // Not setting a lock, since this is a background job and doesn't return directly too the user...
+        hostaudit($jsonObj->deployment);
+        NagPhean::delJob($job);
     }
     unset($job, $data, $jsonObj);
 }

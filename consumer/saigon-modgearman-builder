@@ -313,7 +313,7 @@ sub fetchmodgearmandata {
     my $ua = LWP::UserAgent->new();
     $ua->agent('Saigon Mod-Gearman Data Fetcher/' . $version . ' (' . $ua->_agent . '/' . $eth0Interface->address . ')');
     $ua->ssl_opts('verify_hostname' => 0);
-    my $response = $ua->post($url);
+    my $response = $ua->get($url);
     if ($response->is_error) {
         return 0;
     }

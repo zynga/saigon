@@ -34,6 +34,10 @@ if (strtolower(MODE) == 'prod') {
     define('GFS_ACCESS', 'group1,group2');
     define('GFS_PLUGLOC', '/some/path/');
     define('BUILD_NRPERPM', true);
+    define('API_EVENT_SUBMISSION', 'inline');
+    define('VARNISH_CACHE_ENABLED', false);
+    define('VARNISH_CACHE_HOSTS', '127.0.0.1');
+    define('VARNISH_CACHE_HOSTNAME', 'localhost');
 } else if (strtolower(MODE) == 'secure') {
     /* Redis Cluster Information */
     define('REDIS_CLUSTER', '127.0.0.1:6379');
@@ -49,6 +53,10 @@ if (strtolower(MODE) == 'prod') {
     define('GFS_ACCESS', 'group1,group2');
     define('GFS_PLUGLOC', '/some/path/');
     define('BUILD_NRPERPM', true);
+    define('API_EVENT_SUBMISSION', 'inline');
+    define('VARNISH_CACHE_ENABLED', false);
+    define('VARNISH_CACHE_HOSTS', '127.0.0.1');
+    define('VARNISH_CACHE_HOSTNAME', 'localhost');
 } else {
     /* Redis Cluster Information */
     define('REDIS_CLUSTER', '127.0.0.1:6379');
@@ -64,6 +72,10 @@ if (strtolower(MODE) == 'prod') {
     define('GFS_ACCESS', '*'); // Every deployment
     define('GFS_PLUGLOC', '/some/path/');
     define('BUILD_NRPERPM', false);
+    define('API_EVENT_SUBMISSION', 'inline');
+    define('VARNISH_CACHE_ENABLED', false);
+    define('VARNISH_CACHE_HOSTS', '127.0.0.1');
+    define('VARNISH_CACHE_HOSTNAME', 'localhost');
 }
 /* Import log4php Library */
 require_once BASE_PATH.'/modules/log4php/Logger.php';
@@ -75,10 +87,7 @@ define('MINIFIED_HTML_HEADER', VIEW_DIRECTORY."minified_header.php");
 define('MINIFIED_REFRESH_HTML_HEADER', VIEW_DIRECTORY."minified_refresh_header.php");
 define('AUTH_MODULE', 'LDAPAuth'); // Currently has: LDAPAuth and NoAuth
 define('SUPERMEN', 'control-group');
-/* Define Host API Interface Modules */
-define('DEPLOYMENT_MODULES', 'CMDBDatacenters,CMDBDeployments,CDCRouterVMs,AWSEC2');
-define('INPUT_MODULES', 'CMDBDNGlobs,CMDBGlobs,CMDBRSDeployments,CMDBRSServerArrays,RightScale,AWSEC2');
 define('SUBDEPLOYMENT_TYPES', 'staging,production');
-/* Import Host Module Auth Info */
+/* Import Host Module Info */
 require_once BASE_PATH.'/conf/hostmodules.inc.php';
 

@@ -9,9 +9,9 @@
 class APIViewData
 {
 
-    private $status;
-    private $deployment;
-    private $data;
+    public $status;
+    public $deployment;
+    public $data;
 
     public function __construct($status, $deployment, $response) {
         $this->_setStatus($status);

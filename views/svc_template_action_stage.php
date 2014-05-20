@@ -18,6 +18,7 @@ $svcAlias = isset($viewData->svcInfo['alias'])?$viewData->svcInfo['alias']:'';
 $svcUse = isset($viewData->svcInfo['use'])?$viewData->svcInfo['use']:'';
 
 $svcChkCommand = isset($viewData->svcInfo['check_command'])?$viewData->svcInfo['check_command']:'';
+$svcServiceGroup = isset($viewData->svcInfo['servicegroups'])?$viewData->svcInfo['servicegroups']:'';
 $svcInitState = isset($viewData->svcInfo['initial_state'])?$viewData->svcInfo['initial_state']:'';
 $svcMaxChkAtts = isset($viewData->svcInfo['max_check_attempts'])?$viewData->svcInfo['max_check_attempts']:'';
 $svcCheckInt = isset($viewData->svcInfo['check_interval'])?$viewData->svcInfo['check_interval']:'';
@@ -36,7 +37,7 @@ $svcNotifPeriod = isset($viewData->svcInfo['notification_period'])?$viewData->sv
 $svcNotifOpts = isset($viewData->svcInfo['notification_options'])?$viewData->svcInfo['notification_options']:array();
 $svcChkFreshness = isset($viewData->svcInfo['check_freshness'])?$viewData->svcInfo['check_freshness']:-1;
 $svcChkFreshInt = isset($viewData->svcInfo['freshness_threshold'])?$viewData->svcInfo['freshness_threshold']:'';
-$svcEvtHandEn = isset($viewData->svcInfo['event_handler_enabled'])?$viewData->svcInfo['event_handler_enabled']:'-1';
+$svcEventHandEn = isset($viewData->svcInfo['event_handler_enabled'])?$viewData->svcInfo['event_handler_enabled']:'-1';
 $svcEHCommand = isset($viewData->svcInfo['event_handler'])?$viewData->svcInfo['event_handler']:'';
 
 $svcCArg1 = isset($viewData->svcInfo['carg1'])?$viewData->svcInfo['carg1']:'';
@@ -176,15 +177,21 @@ $(function() {
             multiple: false,
         }).multiselectfilter();
     $("#ehcmd")
-            .multiselect({
+        .multiselect({
             selectedList: 1,
             noneSelectedText: "Select Eventhandler Command",
             multiple: false,
         }).multiselectfilter(),
     $("#ehenabled")
-            .multiselect({
+        .multiselect({
             selectedList: 1,
             noneSelectedText: "Select State",
+            multiple: false,
+        }).multiselectfilter(),
+    $("#svcgrp")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Service Group",
             multiple: false,
         }).multiselectfilter();
 });
@@ -514,7 +521,17 @@ foreach ($maxchks as $chkTimes) {
                             <select id="chkinterval" name="chkinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('1' => '1 Min', '2' => '2 Mins', '3' => '3 Mins', '5' => '5 Mins', '10' => '10 Mins', '15' => '15 Mins', '30' => '30 Mins', '60' => '1 Hour', '120' => '2 Hours');
+$chkInts = array();
+for ($i=1;$i<=5;$i++) {
+    $chkInts[$i] = $i . " Min(s)";
+}
+for ($i=10;$i<55;) {
+    $chkInts[$i] = $i . " Min(s)";
+    $i = $i+5;
+}
+for ($i=1;$i<=48;$i++) {
+    $chkInts[60*$i] = $i . " Hour(s)";
+}
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $svcCheckInt) {
 ?>
@@ -534,7 +551,7 @@ foreach ($chkInts as $chkTime => $chkVal) {
                             <select id="chkretryinterval" name="chkretryinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('1' => '1 Min', '2' => '2 Mins', '5' => '5 Mins', '15' => '15 Mins', '30' => '30 Mins', '60' => '1 Hour');
+// defined at line 517
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $svcRetryInt) {
 ?>
@@ -694,7 +711,7 @@ else if (preg_match("/^1$/", $svcNotifEn)) {
                             <select id="notifinterval" name="notifinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('15' => '15 Mins', '30' => '30 Mins', '60' => '1 Hour', '120' => '2 Hours', '180' => '3 Hours');
+// defined at line 517
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $svcNotifInt) {
 ?>
@@ -782,7 +799,16 @@ else if (preg_match("/^1$/", $svcChkFreshness)) {
                             <select id="chkfreshinterval" name="chkfreshinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('900' => '15 Mins', '1800' => '30 Mins', '3600' => '1 Hour', '7200' => '2 Hours', '14400' => '4 Hours', '28800' => '8 Hours');
+$chkInts = array(
+    '60' => '1 Min(s)', '120' => '2 Min(s)', '180' => '3 Min(s)', '240' => '4 Min(s)',
+);
+for ($i=5;$i<=55;) {
+    $chkInts[60*$i] = $i . " Min(s)";
+    $i = $i+5;
+}
+for ($i=1;$i<=48;$i++) {
+    $chkInts[3600*$i] = $i . " Hour(s)";
+}
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $svcChkFreshInt) {
 ?>
@@ -791,6 +817,38 @@ foreach ($chkInts as $chkTime => $chkVal) {
     } else {
 ?>
                                 <option value="<?php echo $chkTime?>"><?php echo $chkVal?></option>
+<?php
+    }
+}
+?>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr><tr>
+        <td colspan="4">
+            <div class="parentClass divCacGroup" id="svcgrpsinfo" style="text-align:left;text-indent:25px;background-color:#91C5D4;border-radius:4px;">
+                <img src="static/imgs/plusSign.gif">
+                ServiceGroups Related Information:
+            </div>
+            <div class="divHide parent-desc-svcgrpsinfo">
+                <table style="width:99%;">
+                    <tr>
+                        <th style="width:30%;text-align:right;">Service Groups:</th>
+                        <td style="text-align:left;">
+                            <select id="svcgrp" name="svcgrp" multiple="multiple">
+                                <option value=""> - Null or incl from Template - </option>
+<?php
+foreach ($viewData->svcgroups as $svcGroup => $sgArray) {
+    if (in_array($svcGroup, $svcServiceGroup)) {
+?>
+                                <option value="<?php echo $svcGroup?>" selected><?php echo $svcGroup?></option>
+<?php
+    } else {
+?>
+                                <option value="<?php echo $svcGroup?>"><?php echo $svcGroup?></option>
 <?php
     }
 }

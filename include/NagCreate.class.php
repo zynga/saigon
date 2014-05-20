@@ -111,7 +111,7 @@ class NagCreate {
         return self::$m_subdeployment;
     }
 
-    public static function buildDeployment($deployment, $revision = false, $diff = false, $forcebuild = false) {
+    public static function buildDeployment($deployment, $revision = false, $diff = false, $forcebuild = false, $shardposition = false) {
         self::checkPerms($deployment);
         self::$deployment = $deployment;
         self::$m_logger = new NagLogger();
@@ -143,6 +143,14 @@ class NagCreate {
             $helper = new NagHelpers(true);
             $helper->setAliasTemplate($responseObj->miscsettings->aliastemplate);
             $helper->setGlobalNegate($responseObj->miscsettings->deploynegate);
+            if ( $shardposition !== false) {
+                $deploymentInfo = RevDeploy::getDeploymentInfo($deployment);
+                $helper->enableSharding(
+                    $deploymentInfo['shardkey'],
+                    $deploymentInfo['shardcount'],
+                    $shardposition
+                );
+            }
         }
         /* Create Initial Files for Nagios */
         if (!empty($responseObj->timeperiods)) {
@@ -243,6 +251,7 @@ class NagCreate {
             if (empty($responseObj->services)) return "Initial Service Data was Empty"; 
             elseif (empty($responseObj->nodetemplates)) return "Initial NodeTemplate Data was Empty";
         }
+        $helper->scrubHosts();
         if (!empty($responseObj->services)) $helper->importServices($responseObj->services);
         if (!empty($responseObj->nodetemplates)) $helper->importNodeTemplate($responseObj->nodetemplates, self::getSubDeployment());
         if (!empty($responseObj->servicedependencies)) $helper->importServiceDependencies($responseObj->servicedependencies);

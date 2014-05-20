@@ -218,10 +218,15 @@ class NagHelpers {
     }
 
     public function returnHosts() {
+        return $this->getCache()->getHosts();
+    }
+
+    public function scrubHosts() {
+        // Return immediately if sharding is disabled...
+        if (self::$enableSharding === false) return;
         $hosts = $this->getCache()->getHosts();
         $results = array();
         $roundtwo = array();
-        if (self::$enableSharding === false) return $hosts;
         foreach ($hosts as $host => $hostdata) {
             if ((isset($hostdata['parents'])) && (!empty($hostdata['parents']))) {
                 $roundtwo[$host] = $hostdata;
@@ -231,7 +236,7 @@ class NagHelpers {
             $results[$host] = $hostdata;
         }
         if (empty($roundtwo)) {
-            return $results;
+            $this->getCache()->updateHosts($results);
         }
         else {
             // Making sure our children end up with their parents.
@@ -249,7 +254,7 @@ class NagHelpers {
                     $results[$host] = $hostdata;
                 }
             }
-            return $results;
+            $this->getCache()->updateHosts($results);
         }
     }
 
@@ -438,6 +443,10 @@ class NagHelpersCache {
             return $this->m_cache['hosts'];
         }
         return array();
+    }
+
+    public function updateHosts(array $hosts) {
+        $this->m_cache['hosts'] = $hosts;
     }
 
     public function addSvc($svc) {

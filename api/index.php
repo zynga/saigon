@@ -30,8 +30,9 @@ $app = new \Slim\Slim();
 
 // Internal functions
 function check_auth($app, $deployment) {
-    $controller = new Controller();
-    $return = $controller->checkGroupAuth($deployment, true);
+    $amodule = AUTH_MODULE;
+    $authmodule = new $amodule();
+    $return = $authmodule->checkAuth($deployment);
     if ($return === false) {
         $apiResponse = new APIViewData(1, $deployment, "Invalid Login or Invalid Credentials Supplied");
         $app->halt(401, $apiResponse->returnJson());
@@ -40,8 +41,12 @@ function check_auth($app, $deployment) {
 }
 
 function check_revision_status($deployment) {
-    $controller = new Controller();
-    $controller->checkDeploymentRevStatus($deployment);
+    $currRev = RevDeploy::getDeploymentRev($deployment);
+    $nextRev = RevDeploy::getDeploymentNextRev($deployment);
+    if ($currRev == $nextRev) {
+        $incrRev = RevDeploy::incrDeploymentNextRev($deployment);
+        CopyDeploy::copyDeploymentRevision($deployment, $currRev, $incrRev);
+    }
     return true;
 }
 
@@ -216,6 +221,8 @@ $app->hook('slim.before.router', function () use($app)
             require_once(BASE_PATH . "/routes/contacttemplate.route.php"); break;
         case "/sapi/deployment":
             require_once(BASE_PATH . "/routes/deployment.route.php"); break;
+        case "/sapi/event":
+            require_once(BASE_PATH . "/routes/event.route.php"); break;
         case "/sapi/hostgroups":
         case "/sapi/hostgroup":
             require_once(BASE_PATH . "/routes/hostgroup.route.php"); break;

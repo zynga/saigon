@@ -144,9 +144,11 @@ class NagTester
     {
         if (self::$init === false) self::init();
         if ($subdeployment === false) {
+            NagRedis::del(md5('deployment:'.$deployment).':'.$revision.':buildoutput');
             NagRedis::hMSet(md5('deployment:'.$deployment).':'.$revision.':buildoutput', $deploymentInfo);
         }
         else {
+            NagRedis::del(md5('deployment:'.$deployment).':'.$revision.':buildoutput:'.$subdeployment);
             NagRedis::hMSet(md5('deployment:'.$deployment).':'.$revision.':buildoutput:'.$subdeployment, $deploymentInfo);
         }
     }
@@ -264,9 +266,11 @@ class NagTester
     {
         if (self::$init === false) self::init();
         if ($subdeployment === false) {
+            NagRedis::del(md5('deployment:'.$deployment).':'.$revision.':testoutput');
             NagRedis::hMSet(md5('deployment:'.$deployment).':'.$revision.':testoutput', $deploymentInfo);
         }
         else {
+            NagRedis::del(md5('deployment:'.$deployment).':'.$revision.':testoutput:'.$subdeployment);
             NagRedis::hMSet(md5('deployment:'.$deployment).':'.$revision.':testoutput:'.$subdeployment, $deploymentInfo);
         }
     }
@@ -379,11 +383,25 @@ class NagTester
     {
         if (self::$init === false) self::init();
         if ($subdeployment === false) {
+            NagRedis::del(md5('deployment:'.$deployment).':diffoutput');
             NagRedis::hMSet(md5('deployment:'.$deployment).':diffoutput', $deploymentInfo);
         }
         else {
+            NagRedis::del(md5('deployment:'.$deployment).':diffoutput:'.$subdeployment);
             NagRedis::hMSet(md5('deployment:'.$deployment).':diffoutput:'.$subdeployment, $deploymentInfo);
         }
+    }
+
+    public static function setDeploymentHostAuditInfo($deployment, $deploymentInfo)
+    {
+        if (self::$init === false) self::init();
+        NagRedis::set(md5('deployment:'.$deployment).':hostaudit', $deploymentInfo);
+    }
+
+    public static function getDeploymentHostAuditInfo($deployment)
+    {
+        if (self::$init === false) self::init();
+        return NagRedis::get(md5('deployment:'.$deployment).':hostaudit');
     }
 
 }

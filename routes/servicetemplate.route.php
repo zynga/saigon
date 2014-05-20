@@ -40,7 +40,7 @@ function servicetemplate_validate ($app, $deployment, $serviceTemplateInfo) {
                 validateForbiddenChars($app, $deployment, '/[^\w.-]/s', $key, $value); break;
             case "servicegroups":
                 if (is_array($value)) $value = implode(',', $value);
-                validateForbiddenChars($app, $deployment, '/[^\w.-,]/s', $key, $value); break;
+                validateForbiddenChars($app, $deployment, '/[^\w.-]/s', $key, $value); break;
             case "is_volatile":
             case "active_checks_enabled":
             case "passive_checks_enabled":
@@ -86,7 +86,7 @@ function servicetemplate_validate ($app, $deployment, $serviceTemplateInfo) {
             case "contacts":
             case "contact_groups":
                 if (is_array($value)) $value = implode(',', $value);
-                validateForbiddenChars($app, $deployment, '/[^\w.-,]/s', $key, $value); break;
+                validateForbiddenChars($app, $deployment, '/[^\w.-]/s', $key, $value); break;
             case "stalking_options":
                 $opts = validateOptions($app, $deployment, $key, $value, array('o','w','u','c'), true);
                 $serviceTemplateInfo[$key] = $opts;

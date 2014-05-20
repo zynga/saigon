@@ -122,8 +122,8 @@ class DeploymentController extends Controller
     {
         $viewData = new ViewData();
         $viewData->action = 'add_write';
-        $viewData->locations = $this->_fetchLocations();
-        $viewData->inputs = $this->_fetchInputs();
+        $viewData->locations = HostInputs::fetchLocations();
+        $viewData->inputs = HostInputs::fetchInputs();
         $viewData->crepos = RevDeploy::getCommonRepos();
         $authmodule = AUTH_MODULE;
         $amodule = new $authmodule();
@@ -153,8 +153,8 @@ class DeploymentController extends Controller
         $deployStaticHostSearch = isset($_SESSION[$builddeployment]['static-deployments'])?$_SESSION[$builddeployment]['static-deployments']:array();
         if (RevDeploy::existsDeployment($deployment) === true) {
             $viewData->error = 'Unable to process request; A deployment with the same name has been detected '.$deployment;
-            $viewData->locations = $this->_fetchLocations();
-            $viewData->inputs = $this->_fetchInputs();
+            $viewData->locations = HostInputs::fetchLocations();
+            $viewData->inputs = HostInputs::fetchInputs();
             $viewData->crepos = RevDeploy::getCommonRepos();
             $viewData->deployInfo = $deployInfo;
             $viewData->action = 'add_write';
@@ -199,7 +199,7 @@ class DeploymentController extends Controller
         $deployStaticHosts = RevDeploy::getDeploymentStaticHosts($deployment);
         if (empty($deployInfo)) {
             $viewData->header = $this->getErrorHeader('deployment_error');
-            $viewData->error = 'Unable to _fetch deployment information from data store for '.$deployment;
+            $viewData->error = 'Unable to fetch deployment information from data store for '.$deployment;
             $this->sendError('generic_error', $viewData);
         }
         $_SESSION[$deployment]['deployments'] = $deployHostSearches;
@@ -209,8 +209,8 @@ class DeploymentController extends Controller
         }
         $viewData->deployInfo = $deployInfo;
         $viewData->action = 'modify_write';
-        $viewData->locations = $this->_fetchLocations();
-        $viewData->inputs = $this->_fetchInputs();
+        $viewData->locations = HostInputs::fetchLocations();
+        $viewData->inputs = HostInputs::fetchInputs();
         $viewData->deployment = $deployment;
         $viewData->crepos = RevDeploy::getCommonRepos();
         $authmodule = AUTH_MODULE;
@@ -240,6 +240,7 @@ class DeploymentController extends Controller
         }
         unset($_SESSION[$deployment]['deployments']);
         unset($_SESSION[$deployment]['static-deployments']);
+        VarnishCache::invalidate($deployment);
         $viewData->deployment = $deployment;
         $this->sendResponse('deployment_write', $viewData);
     }
@@ -404,63 +405,6 @@ class DeploymentController extends Controller
     }
 
     /**
-     * _fetchLocations - fetch predetermined location information 
-     * 
-     * @access private
-     * @return void
-     */
-    private function _fetchLocations()
-    {
-        $locations = array();
-        if (!defined('DEPLOYMENT_MODULES')) return $locations;
-        $modules = explode(',', DEPLOYMENT_MODULES);
-        if (empty($modules[0])) return $locations;
-        foreach ($modules as $module) {
-            $tmpObj = new $module;
-            $return = $tmpObj->getList();
-            if ($return == null) continue;
-            if (preg_match("/^AWSEC2/", $module)) {
-                foreach ($return as $key => $value) {
-                    $locations[$key] = $value;
-                }
-            }
-            else {
-                $locations[$module] = $return;
-            }
-        }
-        return $locations;
-    }
-
-    /**
-     * _fetchInputs - fetch deployment glob / param input locations 
-     * 
-     * @access private
-     * @return void
-     */
-    private function _fetchInputs()
-    {
-        $inputs = array();
-        if (!defined('INPUT_MODULES')) return $inputs;
-        $modules = explode(',', INPUT_MODULES);
-        if (empty($modules[0])) return $inputs;
-        foreach ($modules as $module) {
-            $tmpObj = new $module;
-            $return = $tmpObj->getInput();
-            if ($return == null) continue;
-            if (!is_array($return)) {
-                $inputs[$module] = $return;
-            } else {
-                foreach ($return as $key => $value) {
-                    if ((!isset($inputs[$key])) || (empty($inputs[$key]))) {
-                        $inputs[$key] = $value;
-                    }
-                }
-            }
-        }
-        return $inputs;
-    }
-
-    /**
      * show_configs_stage - show configuration files stage view / routine 
      * 
      * @access public
@@ -472,6 +416,7 @@ class DeploymentController extends Controller
         $deployment = $this->getDeployment('deployment_error');
         $viewData->revs = RevDeploy::getDeploymentRevs($deployment);
         $viewData->allrevs = RevDeploy::getDeploymentAllRevs($deployment);
+        $viewData->deploymentinfo = RevDeploy::getDeploymentInfo($deployment);
         $viewData->deployment = $deployment;
         $this->sendResponse('deployment_show_configs_stage', $viewData);
     }
@@ -497,6 +442,7 @@ class DeploymentController extends Controller
             $viewData->error = 'Unable to detect deployment revision in datastore';
             $this->sendError('generic_error', $viewData);
         }
+        $shardposition = $this->getParam('shard');
         $subdeployment = $this->getParam('subdeployment');
         $islocked = NagTester::getDeploymentBuildLock($deployment, $subdeployment, $revision);
         if ($islocked === false) $viewData->running = false;
@@ -509,7 +455,13 @@ class DeploymentController extends Controller
         } elseif ((empty($deploymentResults)) && ($islocked === false)) {
             NagPhean::init(BEANSTALKD_SERVER, BEANSTALKD_TUBE, true);
             NagPhean::addJob(BEANSTALKD_TUBE,
-                json_encode(array('deployment' => $deployment, 'revision' => $revision, 'type' => 'build', 'subdeployment' => $subdeployment)),
+                json_encode(
+                    array(
+                        'deployment' => $deployment, 'revision' => $revision,
+                        'type' => 'build', 'subdeployment' => $subdeployment,
+                        'shard' => $shardposition
+                    )
+                ),
                 1024, 0, 900);
             $viewData->jobadded = true;
             $deploymentResults['timestamp'] = '0000000000';
@@ -518,7 +470,13 @@ class DeploymentController extends Controller
             ($deploymentResults['timestamp'] < time() - 60) && ($islocked === false)) {
             NagPhean::init(BEANSTALKD_SERVER, BEANSTALKD_TUBE, true);
             NagPhean::addJob(BEANSTALKD_TUBE,
-                json_encode(array('deployment' => $deployment, 'revision' => $revision, 'type' => 'build', 'subdeployment' => $subdeployment)),
+                json_encode(
+                    array(
+                        'deployment' => $deployment, 'revision' => $revision,
+                        'type' => 'build', 'subdeployment' => $subdeployment,
+                        'shard' => $shardposition
+                    )
+                ),
                 1024, 0, 900);
             $viewData->jobadded = true;
             $deploymentResults['output'] = base64_encode('Build Process has been initiated, this page will reload automatically...');
@@ -526,7 +484,13 @@ class DeploymentController extends Controller
             ($deploymentResults['subdeployment'] != $subdeployment) && ($islocked === false)) {
             NagPhean::init(BEANSTALKD_SERVER, BEANSTALKD_TUBE, true);
             NagPhean::addJob(BEANSTALKD_TUBE,
-                json_encode(array('deployment' => $deployment, 'revision' => $revision, 'type' => 'build', 'subdeployment' => $subdeployment)),
+                json_encode(
+                    array(
+                        'deployment' => $deployment, 'revision' => $revision,
+                        'type' => 'build', 'subdeployment' => $subdeployment,
+                        'shard' => $shardposition
+                    )
+                ),
                 1024, 0, 900);
             $viewData->jobadded = true;
             $deploymentResults['output'] = base64_encode('Build Process has been initiated, this page will reload automatically...');
@@ -563,6 +527,7 @@ class DeploymentController extends Controller
         $deployment = $this->getDeployment('deployment_error');
         $viewData->revs = RevDeploy::getDeploymentRevs($deployment);
         $viewData->allrevs = RevDeploy::getDeploymentAllRevs($deployment);
+        $viewData->deploymentinfo = RevDeploy::getDeploymentInfo($deployment);
         $viewData->deployment = $deployment;
         $this->sendResponse('deployment_test_configs_stage', $viewData);
     }
@@ -589,6 +554,7 @@ class DeploymentController extends Controller
             $this->sendError('generic_error', $viewData);
         }
         $subdeployment = $this->getParam('subdeployment');
+        $shardposition = $this->getParam('shard');
         $islocked = NagTester::getDeploymentTestLock($deployment, $subdeployment, $revision);
         if ($islocked === false) $viewData->running = false;
         else $viewData->running = true;
@@ -602,7 +568,11 @@ class DeploymentController extends Controller
             NagPhean::addJob(
                 BEANSTALKD_TUBE,
                 json_encode(
-                    array('deployment' => $deployment, 'revision' => $revision, 'type' => 'test', 'subdeployment' => $subdeployment)
+                    array(
+                        'deployment' => $deployment, 'revision' => $revision,
+                        'type' => 'test', 'subdeployment' => $subdeployment,
+                        'shard' => $shardposition
+                    )
                 ),
                 1024, 0, 900
             );
@@ -615,7 +585,11 @@ class DeploymentController extends Controller
             NagPhean::addJob(
                 BEANSTALKD_TUBE,
                 json_encode(
-                    array('deployment' => $deployment, 'revision' => $revision, 'type' => 'test', 'subdeployment' => $subdeployment)
+                    array(
+                        'deployment' => $deployment, 'revision' => $revision,
+                        'type' => 'test', 'subdeployment' => $subdeployment,
+                        'shard' => $shardposition
+                    )
                 ),
                 1024, 0, 900
             );
@@ -627,7 +601,11 @@ class DeploymentController extends Controller
             NagPhean::addJob(
                 BEANSTALKD_TUBE,
                 json_encode(
-                    array('deployment' => $deployment, 'revision' => $revision, 'type' => 'test', 'subdeployment' => $subdeployment)
+                    array(
+                        'deployment' => $deployment, 'revision' => $revision,
+                        'type' => 'test', 'subdeployment' => $subdeployment,
+                        'shard' => $shardposition
+                    )
                 ),
                 1024, 0, 900
             );
@@ -683,6 +661,7 @@ class DeploymentController extends Controller
         $deployment = $this->getDeployment('deployment_error');
         $viewData->revs = RevDeploy::getDeploymentRevs($deployment);
         $viewData->allrevs = RevDeploy::getDeploymentAllRevs($deployment);
+        $viewData->deploymentinfo = RevDeploy::getDeploymentInfo($deployment);
         $viewData->deployment = $deployment;
         $this->sendResponse('deployment_diff_configs_stage', $viewData);
     }
@@ -715,6 +694,7 @@ class DeploymentController extends Controller
             $this->sendError('generic_error', $viewData);
         }
         $subdeployment = $this->getParam('subdeployment');
+        $shardposition = $this->getParam('shard');
         $islocked = NagTester::getDeploymentBuildLock($deployment, $subdeployment, $fromrev);
         if ($islocked === false) {
             $islocked = NagTester::getDeploymentBuildLock($deployment, $subdeployment, $torev);
@@ -735,7 +715,7 @@ class DeploymentController extends Controller
                 json_encode(
                     array('deployment' => $deployment, 'type' => 'diff',
                         'fromrev' => $fromrev, 'torev' => $torev,
-                        'subdeployment' => $subdeployment)
+                        'subdeployment' => $subdeployment, 'shard' => $shardposition)
                 ),
                 1024, 0, 900
             );
@@ -750,7 +730,7 @@ class DeploymentController extends Controller
                 json_encode(
                     array('deployment' => $deployment, 'type' => 'diff',
                         'fromrev' => $fromrev, 'torev' => $torev,
-                        'subdeployment' => $subdeployment)
+                        'subdeployment' => $subdeployment, 'shard' => $shardposition)
                 ),
                 1024, 0, 900
             );
@@ -764,7 +744,7 @@ class DeploymentController extends Controller
                 json_encode(
                     array('deployment' => $deployment, 'type' => 'diff',
                         'fromrev' => $fromrev, 'torev' => $torev,
-                        'subdeployment' => $subdeployment)
+                        'subdeployment' => $subdeployment, 'shard' => $shardposition)
                 ),
                 1024, 0, 900
             );
@@ -778,7 +758,7 @@ class DeploymentController extends Controller
                 json_encode(
                     array('deployment' => $deployment, 'type' => 'diff',
                         'fromrev' => $fromrev, 'torev' => $torev,
-                        'subdeployment' => $subdeployment)
+                        'subdeployment' => $subdeployment, 'shard' => $shardposition)
                 ),
                 1024, 0, 900
             );
@@ -792,7 +772,7 @@ class DeploymentController extends Controller
                 json_encode(
                     array('deployment' => $deployment, 'type' => 'diff',
                         'fromrev' => $fromrev, 'torev' => $torev,
-                        'subdeployment' => $subdeployment)
+                        'subdeployment' => $subdeployment, 'shard' => $shardposition)
                 ),
                 1024, 0, 900
             );
@@ -875,6 +855,7 @@ class DeploymentController extends Controller
             $this->sendError('generic_error', $viewData);
         }
         RevDeploy::setDeploymentRevs($deployment, $fromRev, $toRev, $note);
+        VarnishCache::invalidate($deployment);
         $viewData->deployment = $deployment;
         $viewData->from = $fromRev;
         $viewData->to = $toRev;
@@ -942,6 +923,7 @@ class DeploymentController extends Controller
         }
         $this->checkGroupAuth($deployment);
         RevDeploy::deleteDeployment($deployment);
+        VarnishCache::invalidate($deployment);
         $viewData->deployment = $deployment;
         $this->sendResponse('deployment_del_write', $viewData);
     }
@@ -1063,6 +1045,16 @@ class DeploymentController extends Controller
             $viewData->status = "inactive";
         }
         $this->sendResponse('deployment_build_nrpe_rpm', $viewData);
+    }
+
+    public function invalidate_cache()
+    {
+        $viewData = new ViewData();
+        $deployment = $this->getDeployment('deployment_error');
+        $this->checkGroupAuth($deployment);
+        VarnishCache::invalidate($deployment);
+        $viewData->deployment = $deployment;
+        $this->sendResponse('deployment_invalidate_cache', $viewData);
     }
 
 }

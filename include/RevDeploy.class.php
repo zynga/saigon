@@ -407,6 +407,60 @@ class RevDeploy {
         return false;
     }
 
+    public static function addDeploymentDynamicHost($deployment, $md5Key, array $hostInfo) {
+        if (self::$init === false) self::init();
+        NagRedis::sAdd(md5('deployment:'.$deployment).':hostsearches', $md5Key);
+        NagRedis::hMset(md5('deployment:'.$deployment).':hostsearch:'.$md5Key, $hostInfo);
+        $hostData = new DeploymentHostData($deployment, 'add', 'dynamic', $hostInfo);
+        self::$log->addToLog($hostData);
+        return true;
+    }
+
+    public static function addDeploymentStaticHost($deployment, $ip, array $hostInfo) {
+        if (self::$init === false) self::init();
+        if (preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $ip)) {
+            $ip = NagMisc::encodeIP($ip);
+        }
+        $staticHosts = NagRedis::get(md5('deployment:'.$deployment).':statichosts');
+        $newStaticHosts = json_decode($staticHosts, true);
+        $newStaticHosts[$ip] = $hostInfo;
+        NagRedis::set(md5('deployment:'.$deployment).':statichosts', json_encode($newStaticHosts));
+        $hostData = new DeploymentHostData($deployment, 'add', 'static', $hostInfo);
+        self::$log->addToLog($hostData);
+        return true;
+    }
+
+    public static function delDeploymentDynamicHost($deployment, $md5Key) {
+        if (self::$init === false) self::init();
+        $hostInfo = array();
+        if (NagRedis::sIsMember(md5('deployment:'.$deployment).':hostsearches', $md5Key)) {
+            $hostInfo = NagRedis::hGetAll(md5('deployment:'.$deployment).':hostsearch:'.$md5Key);
+            NagRedis::sRem(md5('deployment:'.$deployment).':hostsearches', $md5Key);
+            NagRedis::del(md5('deployment:'.$deployment).':hostsearch:'.$md5Key);
+            $hostData = new DeploymentHostData($deployment, 'del', 'dynamic', $hostInfo);
+            self::$log->addToLog($hostData);
+        }
+        return $hostInfo;
+    }
+
+    public static function delDeploymentStaticHost($deployment, $ip) {
+        if (self::$init === false) self::init();
+        $hostInfo = array();
+        if (preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $ip)) {
+            $ip = NagMisc::encodeIP($ip);
+        }
+        $staticHosts = NagRedis::get(md5('deployment:'.$deployment).':statichosts');
+        $staticHosts = json_decode($staticHosts, true);
+        if ((isset($staticHosts[$ip])) && (!empty($staticHosts[$ip]))) {
+            $hostInfo = $staticHosts[$ip];
+            unset($staticHosts[$ip]);
+            NagRedis::set(md5('deployment:'.$deployment).':statichosts', json_encode($staticHosts));
+            $hostData = new DeploymentHostData($deployment, 'del', 'static', $hostInfo);
+            self::$log->addToLog($hostData);
+        }
+        return $hostInfo;
+    }
+
     public static function getDeployments() {
         if (self::$init === false) self::init();
         return NagRedis::sMembers(md5('deployments'));
@@ -476,7 +530,12 @@ class RevDeploy {
         $results = array();
         if (NagRedis::exists(md5('deployment:'.$deployment).':statichosts')) {
             $jsonEnc = NagRedis::get(md5('deployment:'.$deployment).':statichosts');
-            $results = NagMisc::recursive_object_to_array(json_decode($jsonEnc));
+            $results = json_decode($jsonEnc, true);
+            foreach ($results as $encIP => $tmpArray) {
+                if ((!isset($tmpArray['subdeployment'])) || (empty($tmpArray['subdeployment']))) {
+                    $results[$encIP]['subdeployment'] = 'N/A';
+                }
+            }
         }
         return $results;
     }
@@ -1495,7 +1554,7 @@ class RevDeploy {
     public static function getDeploymentSvcTemplate($deployment, $svcTemplate, $revision) {
         if (self::$init === false) self::init();
         $results = NagRedis::hGetAll(md5('deployment:'.$deployment).':'.$revision.':svctemplate:'.$svcTemplate);
-        $explodeOpts = array('notification_options','contacts','contact_groups');
+        $explodeOpts = array('notification_options','contacts','contact_groups','servicegroups');
         foreach ($explodeOpts as $opt) {
             if ((isset($results[$opt])) && (preg_match('/,/', $results[$opt]))) {
                 $results[$opt] = preg_split('/\s?,\s?/', $results[$opt]);

@@ -47,6 +47,11 @@ if ((isset($viewData->deployments)) && (!empty($viewData->deployments))) {
                 <a class="deployBtn" title="Build NRPE RPM" href="action.php?controller=deployment&action=build_nrpe_rpm&deployment=<?php echo $deployment?>">Build RPM</a>
 <?php
             }
+            if (VARNISH_CACHE_ENABLED === true) {
+?>
+                <a class="deployBtn" title="Build NRPE RPM" href="action.php?controller=deployment&action=invalidate_cache&deployment=<?php echo $deployment?>">Invalidate Cache</a>
+<?php
+            }
 ?>
                 <div class="divCacGroup"></div>
                 <a class="deployBtn" title="Show Nagios Configuration Files" href="action.php?controller=deployment&action=show_configs_stage&deployment=<?php echo $deployment?>">Show Configs</a>
