@@ -1,0 +1,109 @@
+#!/usr/bin/env perl
+#
+#
+# Copyright (c) 2013, Zynga Inc.
+# https://github.com/zynga/saigon
+# Author: Matt West (https://github.com/mhwest13)
+# License: BSD 2-Clause
+#
+
+#
+#  This script runs as a background process looking for a job in beanstalk telling it
+#   to submit a passive event result to a nagios server.
+#
+
+use strict;
+use warnings;
+use Beanstalk::Client;
+use Getopt::Long;
+use JSON;
+use MCE::Signal ( qw(-setpgrp -use_dev_shm) );
+use MCE;
+
+my $o_server = "localhost";
+my $o_tube = "events";
+my $o_nscabin = "/usr/sbin/send_nsca";
+my $o_nscacfg = "/etc/nagios/send_nsca.cfg";
+my $o_workers = 6;
+my $o_maxjobs = 1000;
+my $o_debug;
+
+####
+# Begin subroutine declarations
+####
+
+sub processjob {
+    my $job = shift;
+    my $data = decode_json($job);
+    if ( $data->{type} eq 'nsca' ) {
+        my $command = "echo " . $data->{data} . " | ";
+        $command .= $o_nscabin . " -H " . $data->{server} . " ";
+        $command .= "-d , -c " . $o_nscacfg . " 2>&1 >/dev/null";
+        system($command);
+    }
+    return;
+}
+
+sub user_begin {
+    my $self = shift;
+    $self->{wk_total_jobs} = 0;
+    my $bs_client = Beanstalk::Client->new(
+        {
+            server       => $o_server,
+            default_tube => $o_tube,
+        }
+    );
+    $self->{bs_client} = $bs_client;
+}
+
+sub user_func {
+    my $self = shift;
+    while (1) {
+        my $job = $self->{bs_client}->reserve();
+        processjob($job->data);
+        $self->{bs_client}->delete( $job->id );
+        $self->{wk_total_jobs} += 1;
+        if ( $self->{wk_total_jobs} >= $o_maxjobs ) {
+            if ( $o_debug ) {
+                $self->sendto( 'stdout',
+                    "Fork Exiting, max jobs reached for " . $self->wid . "\n" );
+            }
+            $self->exit( 0,
+                "Fork Exiting, max jobs reached for " . $self->wid . "\n" );
+        }
+    }
+}
+
+sub user_end {
+    my ( $self, $e ) = (@_);
+}
+
+sub post_exit {
+    my ( $self, $e ) = (@_);
+    $self->restart_worker( $e->{wid} );
+}
+
+####
+## Main
+####
+
+GetOptions(
+    "s|server:s"        => \$o_server,
+    "t|tube:s"          => \$o_tube,
+    "nscabin:s"         => \$o_nscabin,
+    "nscacfg:s"         => \$o_nscacfg,
+    "w|workers:i"       => \$o_workers,
+    "j|jobs:i"          => \$o_maxjobs,
+    "d|debug"           => \$o_debug,
+);
+
+my $mce = MCE->new(
+    max_workers  => $o_workers,
+    user_begin   => \&user_begin,
+    user_func    => \&user_func,
+    user_end     => \&user_end,
+    on_post_exit => \&post_exit,
+);
+
+$mce->run(0);    ## Wait for workers to complete processing.
+

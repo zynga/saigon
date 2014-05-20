@@ -27,7 +27,7 @@ $deployment = $viewData->deployment;
     <tbody>
 <?php
 if ((isset($_SESSION[$deployment]['deployments'])) && (!empty($_SESSION[$deployment]['deployments']))) {
-    sort($_SESSION[$deployment]['deployments']);
+    array_multisort($_SESSION[$deployment]['deployments']);
     foreach ($_SESSION[$deployment]['deployments'] as $md5Key => $dArray) {
 ?>
         <tr>

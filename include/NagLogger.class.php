@@ -38,6 +38,8 @@ class NagLogger
                 'renderingClass' => 'ContactGroupDataRenderer'),
             array('renderedClass' => 'ContactTemplateData',
                 'renderingClass' => 'ContactTemplateDataRenderer'),
+            array('renderedClass' => 'DeploymentHostData',
+                'renderingClass' => 'DeploymentHostDataRenderer'),
             array('renderedClass' => 'HostGroupData',
                 'renderingClass' => 'HostGroupDataRenderer'),
             array('renderedClass' => 'HostTemplateData',

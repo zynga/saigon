@@ -65,12 +65,13 @@ class NagDiff
      * @param mixed $subdeployment deployment we are building revisions for
      * @param mixed $fromrev       from revision we are building
      * @param mixed $torev         to revision we are building
+     * @param mixed $shardposition shard position we may be using
      *
      * @static
      * @access public
      * @return void
      */
-    public static function buildDiffRevisions($deployment, $subdeployment, $fromrev, $torev)
+    public static function buildDiffRevisions($deployment, $subdeployment, $fromrev, $torev, $shardposition)
     {
         self::$_results = array();
         self::$_output = "";
@@ -82,7 +83,7 @@ class NagDiff
         }
         NagCreate::resetLocalCache();
         /* Get Current Nagios Configs */
-        NagCreate::buildDeployment($deployment, $fromrev, true);
+        NagCreate::buildDeployment($deployment, $fromrev, true, true, $shardposition);
         $fromconfs = NagCreate::returnDeploymentConfigs($deployment);
         $fromconfs['nrpe.cfg'] = self::_getNRPECfg($deployment, $fromrev);
         $fromconfs['supplemental-nrpe.cfg'] = self::_getSupNRPECfg($deployment, $fromrev);
@@ -93,7 +94,7 @@ class NagDiff
             return false;
         }
         /* Get Future Revision Configs */
-        NagCreate::buildDeployment($deployment, $torev, true);
+        NagCreate::buildDeployment($deployment, $torev, true, true, $shardposition);
         $toconfs = NagCreate::returnDeploymentConfigs($deployment);
         $toconfs['nrpe.cfg'] = self::_getNRPECfg($deployment, $torev);
         $toconfs['supplemental-nrpe.cfg'] = self::_getSupNRPECfg($deployment, $torev);

@@ -60,6 +60,19 @@ $app->post('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function
         );
         $app->halt(404, $apiResponse->returnJson());
     }
+    $request = $app->request();
+    $contentType = $request->headers('Content-Type');
+    if ($contentType == 'application/json') {
+        $showInfo = $request->getBody();
+        $showInfo = json_decode($diffInfo,true);
+        if ((!isset($showInfo['shard'])) || (empty($showInfo['shard']))) {
+            $showInfo['shard'] = false;
+        }
+    }
+    elseif (preg_match("/form-(data|urlencoded)/", $contentType)) {
+        $showInfo = array();
+        $showInfo['shard'] = $request->post('shard');
+    }
     $islocked = NagTester::getDeploymentBuildLock($deployment, $subdeployment, $revision);
     if ($islocked === false) {
         $force = $app->request()->post('force');
@@ -72,7 +85,8 @@ $app->post('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'build',
-                        'subdeployment' => $subdeployment
+                        'subdeployment' => $subdeployment,
+                        'shard' => $showInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -89,7 +103,8 @@ $app->post('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'build',
-                        'subdeployment' => $subdeployment
+                        'subdeployment' => $subdeployment,
+                        'shard' => $showInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -106,7 +121,8 @@ $app->post('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'build',
-                        'subdeployment' => $subdeployment
+                        'subdeployment' => $subdeployment,
+                        'shard' => $showInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -174,6 +190,19 @@ $app->post('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function
         );
         $app->halt(404, $apiResponse->returnJson());
     }
+    $request = $app->request();
+    $contentType = $request->headers('Content-Type');
+    if ($contentType == 'application/json') {
+        $testInfo = $request->getBody();
+        $testInfo = json_decode($testInfo,true);
+        if ((!isset($testInfo['shard'])) || (empty($testInfo['shard']))) {
+            $testInfo['shard'] = false;
+        }
+    }
+    elseif (preg_match("/form-(data|urlencoded)/", $contentType)) {
+        $testInfo = array();
+        $testInfo['shard'] = $request->post('shard');
+    }
     $islocked = NagTester::getDeploymentTestLock($deployment, $subdeployment, $revision);
     if ($islocked === false) {
         $force = $app->request()->post('force');
@@ -186,7 +215,8 @@ $app->post('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'test',
-                        'subdeployment' => $subdeployment
+                        'subdeployment' => $subdeployment,
+                        'shard' => $testInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -203,7 +233,8 @@ $app->post('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'test',
-                        'subdeployment' => $subdeployment
+                        'subdeployment' => $subdeployment,
+                        'shard' => $testInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -220,7 +251,8 @@ $app->post('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'test',
-                        'subdeployment' => $subdeployment
+                        'subdeployment' => $subdeployment,
+                        'shard' => $testInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -294,11 +326,15 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
     if ($contentType == 'application/json') {
         $diffInfo = $request->getBody();
         $diffInfo = json_decode($diffInfo,true);
+        if ((!isset($diffInfo['shard'])) || (empty($diffInfo['shard']))) {
+            $diffInfo['shard'] = false;
+        }
     }
     elseif (preg_match("/form-(data|urlencoded)/", $contentType)) {
         $diffInfo = array();
         $diffInfo['to'] = $request->post('to');
         $diffInfo['from'] = $request->post('from');
+        $diffInfo['shard'] = $request->post('shard');
     }
     foreach (array('from','to') as $revKey) {
         if ((!isset($diffInfo[$revKey])) || (empty($diffInfo[$revKey]))) {
@@ -329,6 +365,7 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
                         'subdeployment' => $subdeployment,
                         'fromrev' => $diffInfo['from'],
                         'torev' => $diffInfo['to'],
+                        'shard' => $diffInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -354,6 +391,7 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
                         'subdeployment' => $subdeployment,
                         'fromrev' => $diffInfo['from'],
                         'torev' => $diffInfo['to'],
+                        'shard' => $diffInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -379,6 +417,7 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
                         'subdeployment' => $subdeployment,
                         'fromrev' => $diffInfo['from'],
                         'torev' => $diffInfo['to'],
+                        'shard' => $diffInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -404,6 +443,7 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
                         'subdeployment' => $subdeployment,
                         'fromrev' => $diffInfo['from'],
                         'torev' => $diffInfo['to'],
+                        'shard' => $diffInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -429,6 +469,7 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
                         'subdeployment' => $subdeployment,
                         'fromrev' => $diffInfo['from'],
                         'torev' => $diffInfo['to'],
+                        'shard' => $diffInfo['shard'],
                         )
                     ),
                 1024, 0, 900
@@ -683,7 +724,7 @@ $app->post('/sapi/configs/:deployment/cgi', function($deployment) use ($app) {
             case "authorized_for_all_host_commands":
             case "authorized_for_read_only":
                 if (is_array($cgiConfigInfo[$key])) $cgiConfigInfo[$key] = implode(',', $cgiConfigInfo[$key]);
-                validateForbiddenChars($app, $deployment, '/[^\w-,\*]/s', $key, $cgiConfigInfo[$key]); break;
+                validateForbiddenChars($app, $deployment, '/[^\w-\*]/s', $key, $cgiConfigInfo[$key]); break;
             default:
                 break;
         }

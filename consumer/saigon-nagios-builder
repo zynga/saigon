@@ -43,19 +43,19 @@ NagCreate::setSubDeployment(SUBDEPLOYMENT);
 $buildReturn = NagCreate::buildDeployment($deployment);
 if ($buildReturn !== true) {
     $naglogger->addToLog("Nagios Configuration Failed to Build Deployment: $buildReturn");
-    exit(1);
+    cleanandexit(1);
 }
 
 $testReturn = NagCreate::testDeployment($deployment);
 if ($testReturn['exitcode'] != 0) {
     $naglogger->addToLog("Nagios Configuration Testing Failed");
     $naglogger->addToLog($testReturn['output']);
-    exit(1);
+    cleanandexit(1);
 }
 
 if ((isset($argv[1])) && ($argv[1] == '-t')) {
     $naglogger->addToLog("Nagios Configuration Test Flag Caught, Testing Successful, Now Exiting...");
-    exit(0);
+    cleanandexit(0);
 }
 
 $moveReturn = NagCreate::moveDeployment($deployment, DEBUG);
@@ -67,12 +67,19 @@ if (!empty($moveReturn)) {
     $restartReturn = NagCreate::restartNagios();
     if ($restartReturn['exitcode'] != 0) {
         $naglogger->addToLog("Error Restarting Nagios");
-        exit(1);
+        cleanandexit(1);
     }
     $naglogger->addToLog("Nagios Successfully restarted, Exiting process...");
-    exit(0);
+    cleanandexit(0);
 }
 
 $naglogger->addToLog("Nagios Configuration Creation Successful, Unable to detect config differences between tmp and current production configs, exiting process...");
-exit(0);
+cleanandexit(0);
+
+function cleanandexit($exitcode)
+{
+    // Remove the pid file...
+    unlink(PID_FILE);
+    exit($exitcode);
+}
 

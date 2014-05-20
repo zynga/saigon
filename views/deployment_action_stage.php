@@ -51,7 +51,7 @@ var searchList = new Array(<?php echo count($viewData->locations)?>)
 searchList["empty"] = ["Select a Parameter"];
 <?php
 foreach ($viewData->locations as $srchLoc => $slArray) {
-    $keysArray = array_keys($slArray);
+    $keysArray = array_values($slArray);
 ?>
 searchList["<?php echo $srchLoc?>"] = ["Select a Parameter", "<?php echo implode('", "', $keysArray)?>"];
 <?php

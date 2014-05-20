@@ -454,7 +454,17 @@ foreach ($viewData->timeperiods as $timePeriod => $tpArray) {
                             <select id="chkinterval" name="chkinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('1' => '1 Min', '5' => '5 Mins', '15' => '15 Mins', '30' => '30 Mins', '60' => '1 Hour', '120' => '2 Hours');
+$chkInts = array();
+for ($i=1;$i<=5;$i++) {
+    $chkInts[$i] = $i . " Min(s)";
+}
+for ($i=10;$i<55;) {
+    $chkInts[$i] = $i . " Min(s)";
+    $i = $i+5;
+}
+for ($i=1;$i<=48;$i++) {
+    $chkInts[60*$i] = $i . " Hour(s)";
+}
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $hostCheckInt) {
 ?>
@@ -474,7 +484,7 @@ foreach ($chkInts as $chkTime => $chkVal) {
                             <select id="chkretryinterval" name="chkretryinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('1' => '1 Min', '2' => '2 Mins', '5' => '5 Mins', '15' => '15 Mins', '30' => '30 Mins', '60' => '1 Hour');
+// defined at line 457
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $hostRetryInt) {
 ?>
@@ -634,7 +644,7 @@ else if (preg_match("/^1$/", $hostNotifEn)) {
                             <select id="notifinterval" name="notifinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('15' => '15 Mins', '30' => '30 Mins', '60' => '1 Hour', '120' => '2 Hours', '180' => '3 Hours');
+// defined at line 457
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $hostNotifInt) {
 ?>

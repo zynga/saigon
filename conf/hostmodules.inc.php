@@ -7,8 +7,12 @@
 //
 
 /**
- * Host Module Auth Information
+ * Host Module Information
  **/
+
+/* Define Host API Interface Modules */
+define('DEPLOYMENT_MODULES', 'CMDBDatacenters,CMDBDeployments,AWSEC2');
+define('INPUT_MODULES', 'CMDBGlobs,CMDBRSDeployments,CMDBRSServerArrays,RightScale,AWSEC2');
 
 /* CMDB Auth Info / Library Requirements */
 define('CMDB_USER', 'user');

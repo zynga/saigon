@@ -1,0 +1,9 @@
+check process saigon-events-submitter with pidfile /opt/saigon/var/run/saigon-events-submitter.pid
+    start program "/opt/saigon/misc/saigon-events-submitter.init start"
+        as uid nobody and gid nobody
+    stop program "/opt/saigon/misc/saigon-events-submitter.init stop"
+        as uid nobody and gid nobody
+    if 5 restarts within 5 cycles then timeout
+    if totalmem > 50% then alert
+    if cpu > 95% for 3 cycles then alert
+    if children < 1 then restart

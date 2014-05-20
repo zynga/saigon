@@ -288,3 +288,24 @@ $app->get('/sapi/consumer/routervms/:zone', function($zone) use ($app) {
     $apiResponse->printJson();
 })->name('saigon-api-consumer-routervms');
 
+/*
+ * Saigon Host Audit Consumer Output
+ */
+
+$app->get('/sapi/consumer/hostaudit/:deployment', function($deployment) use ($app) {
+    check_deployment_exists($app, $deployment);
+    $hostAuditInfo = array();
+    $hostAuditInfo = NagTester::getDeploymentHostAuditInfo($deployment);
+    if (empty($hostAuditInfo)) {
+        $apiResponse = new APIViewData(1, $deployment,
+            "Unable to detect Saigon Host Audit Results"
+        );
+        $app->halt(403, $apiResponse->returnJson());
+    }
+    $hostAuditInfo = json_decode($hostAuditInfo);
+    $apiResponse = new APIViewData(0, $deployment, false);
+    foreach ($hostAuditInfo as $key => $value) {
+        $apiResponse->setExtraResponseData($key, $value);
+    }
+    $apiResponse->printJson();
+})->name('saigon-api-consumer-hostaudit');

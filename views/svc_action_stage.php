@@ -525,7 +525,17 @@ foreach ($maxchks as $chkTimes) {
                             <select id="chkinterval" name="chkinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('1' => '1 Min', '2' => '2 Mins', '3' => '3 Mins', '5' => '5 Mins', '10' => '10 Mins', '15' => '15 Mins', '30' => '30 Mins', '60' => '1 Hour', '120' => '2 Hours');
+$chkInts = array();
+for ($i=1;$i<=5;$i++) {
+    $chkInts[$i] = $i . " Min(s)";
+}
+for ($i=10;$i<55;) {
+    $chkInts[$i] = $i . " Min(s)";
+    $i = $i+5;
+}
+for ($i=1;$i<=48;$i++) {
+    $chkInts[60*$i] = $i . " Hour(s)";
+}
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $svcCheckInt) {
 ?>
@@ -545,7 +555,7 @@ foreach ($chkInts as $chkTime => $chkVal) {
                             <select id="chkretryinterval" name="chkretryinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('1' => '1 Min', '2' => '2 Mins', '5' => '5 Mins', '15' => '15 Mins', '30' => '30 Mins', '60' => '1 Hour');
+// defined at line 528
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $svcRetryInt) {
 ?>
@@ -705,7 +715,7 @@ else if (preg_match("/^1$/", $svcNotifEn)) {
                             <select id="notifinterval" name="notifinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('15' => '15 Mins', '30' => '30 Mins', '60' => '1 Hour', '120' => '2 Hours', '180' => '3 Hours');
+// defined at line 528
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $svcNotifInt) {
 ?>
@@ -793,7 +803,16 @@ else if (preg_match("/^1$/", $svcChkFreshness)) {
                             <select id="chkfreshinterval" name="chkfreshinterval" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
-$chkInts = array('900' => '15 Mins', '1800' => '30 Mins', '3600' => '1 Hour', '7200' => '2 Hours', '14400' => '4 Hours', '28800' => '8 Hours');
+$chkInts = array(
+    '60' => '1 Min(s)', '120' => '2 Min(s)', '180' => '3 Min(s)', '240' => '4 Min(s)',
+);
+for ($i=5;$i<=55;) {
+    $chkInts[60*$i] = $i . " Min(s)";
+    $i = $i+5;
+}
+for ($i=1;$i<=48;$i++) {
+    $chkInts[3600*$i] = $i . " Hour(s)";
+}
 foreach ($chkInts as $chkTime => $chkVal) {
     if ($chkTime == $svcChkFreshInt) {
 ?>
@@ -827,7 +846,7 @@ foreach ($chkInts as $chkTime => $chkVal) {
                                 <option value=""> - Null or incl from Template - </option>
 <?php
 foreach ($viewData->svcgroups as $svcGroup => $sgArray) {
-    if ($svcGroup == $svcServiceGroup) {
+    if (in_array($svcGroup, $svcServiceGroup)) {
 ?>
                                 <option value="<?php echo $svcGroup?>" selected><?php echo $svcGroup?></option>
 <?php

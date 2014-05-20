@@ -40,14 +40,19 @@ class LDAPAuth implements Auth
         $pass = $_SERVER['PHP_AUTH_PW'];
         $return = false;
         if (preg_match('/,/', $ldapGroup)) {
-            $return = $this->inGroup($user, $pass, $ldapGroup);
+            $return = $this->inGroup($user, $pass, $ldapGroup, 'people');
+            if ($return === true) {
+                return true;
+            }
+            // Check to see if they are a service account
+            $return = $this->inGroup($user, $pass, $ldapGroup, 'service accounts');
             if ($return === true) {
                 return true;
             }
             // Check and see if they are a super user
             $groups = preg_split('/\s?,\s?/', $ldapGroup);
             if (!in_array($supermen, $groups)) {
-                $return = $this->inGroup($user, $pass, $supermen);
+                $return = $this->inGroup($user, $pass, $supermen, 'people');
                 if ($return === true) {
                     return true;
                 }
@@ -55,13 +60,18 @@ class LDAPAuth implements Auth
             }
             return false;
         } else {
-            $return = $this->inGroup($user, $pass, $ldapGroup);
+            $return = $this->inGroup($user, $pass, $ldapGroup, 'people');
+            if ($return === true) {
+                return true;
+            }
+            // Check to see if they are a service account
+            $return = $this->inGroup($user, $pass, $ldapGroup, 'service accounts');
             if ($return === true) {
                 return true;
             }
             // Check and see if they are a super user
             if ($ldapGroup != $supermen) {
-                $return = $this->inGroup($user, $pass, $supermen);
+                $return = $this->inGroup($user, $pass, $supermen, 'people');
                 if ($return === true) {
                     return true;
                 }
@@ -74,14 +84,15 @@ class LDAPAuth implements Auth
     /**
      * inGroup
      *
-     * @param mixed $user   username used for authentication
-     * @param mixed $pass   password used for authentication
-     * @param mixed $groups group(s) we are checking to see if the user belongs too
+     * @param mixed  $user    username used for authentication
+     * @param mixed  $pass    password used for authentication
+     * @param mixed  $groups  group(s) we are checking to see if the user belongs too
+     * @param string $orgunit orginizational unit for account lookup
      *
      * @access private
      * @return bool
      */
-    private function inGroup($user, $pass, $groups)
+    private function inGroup($user, $pass, $groups, $orgunit)
     {
         $searchGroups = array();
         if (preg_match('/,/', $groups)) {
@@ -91,18 +102,21 @@ class LDAPAuth implements Auth
             array_push($searchGroups, $groups);
         }
         $ldap = ldap_connect(self::LDAP_SERVERS);
-        $dn = "uid=".$user.",ou=people," . self::LDAP_BASEDN;
-        if ($bind = ldap_bind($ldap, $dn, $pass)) {
-            foreach ($searchGroups as $group) {
-                $filter = "(cn=".$group.")";
-                $attrs = array("memberuid");
-                $result = ldap_search($ldap, self::LDAP_BASEDN, $filter, $attrs);
-                $entries = ldap_get_entries($ldap, $result);
-                if ($entries['count'] > 0) {
-                    if (in_array($user, $entries[0]['memberuid'])) {
-                        ldap_unbind($ldap);
-                        return true;
-                    }
+        $dn = "uid=" . $user . ",ou=" . $orgunit . "," . self::LDAP_BASEDN;
+        try {
+            @$bind = ldap_bind($ldap, $dn, $pass);
+        } catch (Exception $e) {
+            return false;
+        }
+        foreach ($searchGroups as $group) {
+            $filter = "(cn=".$group.")";
+            $attrs = array("memberuid");
+            $result = ldap_search($ldap, self::LDAP_BASEDN, $filter, $attrs);
+            $entries = ldap_get_entries($ldap, $result);
+            if ($entries['count'] > 0) {
+                if (in_array($user, $entries[0]['memberuid'])) {
+                    ldap_unbind($ldap);
+                    return true;
                 }
             }
         }

@@ -1,6 +1,6 @@
 Name:          saigon
-Version:       1.0
-Release:       2%{?dist}
+Version:       1.1
+Release:       0%{?dist}
 Summary:       Saigon : Centralized Nagios Configuration System
 Group:         Applications/Systems
 License:       BSD
@@ -126,6 +126,19 @@ Requires:   perl(JSON), perl(MIME::Base64), perl(strict), perl(warnings)
 This provides the consumer used for building nrpe rpm configuration packages
 for the various deployments. This consumer leverages beanstalkd as a job queue.
 
+%package events-submitter
+AutoReq:    no
+Summary:    Saigon Events Submitter
+Group:      Applications/Systems/Consumers
+Requires:   pkgconfig
+Requires:   perl(Beanstalk::Client), perl(MCE), perl(Daemon::Control)
+Requires:   perl(JSON), perl(strict), perl(warnings)
+
+%description events-submitter
+Simple script for submitting passive results to specified nagios servers in an asynchronous manner.
+Main idea of this consumer is to offload event submission work to a pool of workers, rather than being done
+in a synchronous manner from the apache child, this way the API can accept more events in less time.
+
 %prep
 %setup -q
 
@@ -163,6 +176,8 @@ for the various deployments. This consumer leverages beanstalkd as a job queue.
 %{__install} -Dp -m0755 consumer/saigon-tester %{buildroot}%{os_dir}/consumer/saigon-tester
 %{__install} -Dp -m0755 consumer/saigon-fetch-cdc-routervms %{buildroot}%{os_dir}/consumer/saigon-fetch-cdc-routervms
 %{__install} -Dp -m0755 consumer/saigon-nrpe-rpm-builder %{buildroot}%{os_dir}/consumer/saigon-nrpe-rpm-builder
+%{__install} -Dp -m0755 consumer/saigon-events-submitter %{buildroot}%{os_dir}/consumer/saigon-events-submitter
+%{__install} -Dp -m0755 consumer/saigon-hostaudit %{buildroot}%{os_dir}/consumer/saigon-hostaudit
 
 %{__install} -Dp -m0644 controllers/* %{buildroot}%{os_dir}/controllers/
 %{__install} -Dp -m0644 include/*.php %{buildroot}%{os_dir}/include/
@@ -204,6 +219,7 @@ for the various deployments. This consumer leverages beanstalkd as a job queue.
 %{__install} -Dp -m0755 misc/cronjobs/create-saigon-nagiosplugin-builder-crontab %{buildroot}%{os_dir}/misc/cronjobs/create-saigon-nagiosplugin-builder-crontab
 %{__install} -Dp -m0755 misc/cronjobs/create-saigon-nrpe-builder-crontab %{buildroot}%{os_dir}/misc/cronjobs/create-saigon-nrpe-builder-crontab
 %{__install} -Dp -m0755 misc/cronjobs/create-saigon-builder-crontab %{buildroot}%{os_dir}/misc/cronjobs/create-saigon-builder-crontab
+%{__install} -Dp -m0644 misc/cronjobs/saigon-hostaudit %{buildroot}%{os_dir}/misc/cronjobs/saigon-hostaudit
 %{__install} -Dp -m0644 misc/*.cfg %{buildroot}%{os_dir}/misc/
 %{__install} -Dp -m0644 misc/logrotate/* %{buildroot}%{_sysconfdir}/logrotate.d
 %{__install} -Dp -m0644 misc/saigon-tester.monitrc %{buildroot}%{os_dir}/misc/saigon-tester.monitrc
@@ -212,6 +228,8 @@ for the various deployments. This consumer leverages beanstalkd as a job queue.
 %{__install} -Dp -m0644 misc/saigon-web-nginx.conf %{buildroot}%{os_dir}/misc/saigon-web-nginx.conf
 %{__install} -Dp -m0644 misc/saigon-api-apache.conf %{buildroot}%{os_dir}/misc/saigon-api-apache.conf
 %{__install} -Dp -m0644 misc/saigon-api-nginx.conf %{buildroot}%{os_dir}/misc/saigon-api-nginx.conf
+%{__install} -Dp -m0644 misc/saigon-events-submitter.monitrc %{buildroot}%{os_dir}/misc/saigon-events-submitter.monitrc
+%{__install} -Dp -m0755 misc/saigon-events-submitter.init %{buildroot}%{os_dir}/misc/saigon-events-submitter.init
 
 %{__install} -Dp -m0644 renderers/* %{buildroot}%{os_dir}/renderers/
 
@@ -234,56 +252,19 @@ for the various deployments. This consumer leverages beanstalkd as a job queue.
 %post
 
 %post nagios-consumer
-if [ "$1" = 1 ]; then
-    %{os_dir}/misc/cronjobs/create-saigon-builder-crontab &>/dev/null ||:
-fi
+%{os_dir}/misc/cronjobs/create-saigon-builder-crontab &>/dev/null ||:
 
 %post nrpe-consumer
-if [ "$1" = 1 ]; then
-    %{os_dir}/misc/cronjobs/create-saigon-nrpe-builder-crontab &>/dev/null ||:
-fi
+%{os_dir}/misc/cronjobs/create-saigon-nrpe-builder-crontab &>/dev/null ||:
 
 %post modgearman-consumer
-if [ "$1" = 1 ]; then
-    %{os_dir}/misc/cronjobs/create-saigon-modgearman-builder-crontab &>/dev/null ||:
-fi
+%{os_dir}/misc/cronjobs/create-saigon-modgearman-builder-crontab &>/dev/null ||:
 
 %post nagiosplugin-consumer
-if [ "$1" = 1 ]; then
-    %{os_dir}/misc/cronjobs/create-saigon-nagiosplugin-builder-crontab &>/dev/null ||:
-fi
+%{os_dir}/misc/cronjobs/create-saigon-nagiosplugin-builder-crontab &>/dev/null ||:
 
 %post nagiostest-consumer
-if [ "$1" = 1 ]; then
-    ln -s %{os_dir}/misc/saigon-tester.monitrc /etc/monit.d/saigon-tester ||:
-fi
-
-%postun
-
-%postun nagios-consumer
-if [ "$1" = 0 ]; then
-    %{__rm} -f /etc/cron.d/saigon-nagios-builder ||:
-fi
-
-%postun nrpe-consumer
-if [ "$1" = 0 ]; then
-    %{__rm} -f /etc/cron.d/saigon-nrpe-builder ||:
-fi
-
-%postun modgearman-consumer
-if [ "$1" = 0 ]; then
-    %{__rm} -f /etc/cron.d/saigon-modgearman-consumer ||:
-fi
-
-%postun nagiosplugin-consumer
-if [ "$1" = 0 ]; then
-    %{__rm} -f /etc/cron.d/saigon-nagiosplugin-builder ||:
-fi
-
-%postun nagiostest-consumer
-if [ "$1" = 0 ]; then
-    %{__rm} -f /etc/monit.d/saigon-tester ||:
-fi
+ln -s %{os_dir}/misc/saigon-tester.monitrc /etc/monit.d/saigon-tester ||:
 
 %clean
 [ "%{buildroot}" != "/" ] && %{__rm} -rf %{buildroot}
@@ -312,6 +293,8 @@ fi
 
 %files ui
 %{os_dir}/consumer/saigon-fetch-cdc-routervms
+%{os_dir}/consumer/saigon-hostaudit
+%{os_dir}/misc/cronjobs/saigon-hostaudit
 %{os_dir}/controllers
 %{os_dir}/views
 %{os_dir}/www
@@ -374,7 +357,19 @@ fi
 %files nrpe-rpm-consumer
 %{os_dir}/consumer/saigon-nrpe-rpm-builder
 
+%files events-submitter
+%dir %{os_dir}/var/run
+%{os_dir}/consumer/saigon-events-submitter
+%{os_dir}/misc/saigon-events-submitter.init
+%{os_dir}/misc/saigon-events-submitter.monitrc
+
 %changelog
+* Tue May 20 2014 Matt West <mwest@zynga.com> - 1.1-0
+- Bugfixes
+- Feature Addition: Varnish Cache
+- Feature Addition: Event Submission API w/ Consumer
+- Additional Minor Features
+
 * Sat Feb 15 2014 Matt West <mwest@zynga.com> - 1.0-2
 - Bugfixes
 

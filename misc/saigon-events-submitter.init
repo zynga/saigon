@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+use Daemon::Control;
+
+Daemon::Control->new({
+    name        => "Saigon Events Submitter",
+    lsb_start   => '$syslog $remote_fs',
+    lsb_stop    => '$syslog',
+    lsb_sdesc   => 'Saigon Events Submitter',
+    lsb_desc    => 'Saigon Events Submitter',
+    path        => '/opt/saigon/misc/saigon-events-submitter.init',
+
+    program     => '/opt/saigon/consumer/saigon-events-submitter',
+
+    user        => 'nobody',
+    group       => 'nobody',
+
+    pid_file    => '/opt/saigon/var/run/saigon-events-submitter.pid',
+    stderr_file => '/var/log/saigon/saigon-events-submitter-stderr.log',
+    stdout_file => '/var/log/saigon/saigon-events-submitter-stdout.log',
+
+    fork        => 2,
+
+})->run;

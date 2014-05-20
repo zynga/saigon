@@ -1,0 +1,2 @@
+# Cronjob for Saigon Nagios Host and Service Audit Reporter
+15 */4 * * * root /opt/saigon/consumer/saigon-hostaudit

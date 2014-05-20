@@ -73,7 +73,7 @@ function contact_validate ($app, $deployment, $contactInfo) {
                 break;
             case "contactgroups":
                 if (is_array($value)) $value = implode(',', $value);
-                validateForbiddenChars($app, $deployment, '/[^\w.-,]/s', $key, $value); break;
+                validateForbiddenChars($app, $deployment, '/[^\w.-]/s', $key, $value); break;
             default:
                 break;
         }
