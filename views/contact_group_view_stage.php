@@ -17,14 +17,14 @@ if ((isset($viewData->contactInfo['members'])) && (!empty($viewData->contactInfo
     $cgMembers = implode(',', $viewData->contactInfo['members']);
 }
 else {
-    $cgMembers = '<i>null or incl from template</i>';
+    $cgMembers = null;
 }
 
 if ((isset($viewData->contactInfo['contactgroup_members'])) && (!empty($viewData->contactInfo['contactgroup_members']))) {
     $cgGroupMembers = implode(',', $viewData->contactInfo['contactgroup_members']);
 }
 else {
-    $cgGroupMembers = '<i>null or incl from template</i>';
+    $cgGroupMembers = null;
 }
 
 ?>
@@ -51,13 +51,25 @@ if ($viewData->delFlag === true) {
     </tr><tr>
         <th style="width:30%;text-align:right;">Alias:</th>
         <td style="text-align:left;"><?php echo $cgAlias?></td>
-    </tr><tr>
+    </tr>
+<?php
+if ($cgMembers != null) {
+?>
+    <tr>
         <th style="width:30%;text-align:right;">Member(s):</th>
         <td style="text-align:left;"><?php echo $cgMembers?></td>
-    </tr><tr>
+    </tr>
+<?php
+}
+if ($cgGroupMembers != null) {
+?>
+    <tr>
         <th style="width:30%;text-align:right;">Member Group(s):</th>
         <td style="text-align:left;"><?php echo $cgGroupMembers?></td>
     </tr>
+<?php
+}
+?>
 </table>
 <div class="divCacGroup"><!-- 5 Pixel Spacer --></div>
 <?php

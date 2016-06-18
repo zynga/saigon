@@ -40,6 +40,20 @@ if ($viewData->delFlag === true) {
         <th style="width:30%;text-align:right;">Dependent Service:</th>
         <td style="text-align:left;"><?php echo $viewData->svcDepInfo['dependent_service_description']?></td>
     </tr><tr>
+        <th style="width:30%;text-align:right;">Inherit Parent Dependencies:</th>
+<?php
+    if ((isset($viewData->svcDepInfo['inherits_parent'])) && ($viewData->svcDepInfo['inherits_parent'] == 1)) {
+?>
+        <td style="text-align:left;">Yes</td>
+<?php
+    }
+    else {
+?>
+        <td style="text-align:left;">No</td>
+<?php
+    }
+?>
+    </tr><tr>
         <th style="width:30%;text-align:right;">Execution Criteria:</th>
         <td style="text-align:left;"><?php echo implode(',', $viewData->svcDepInfo['execution_failure_criteria'])?></td>
     </tr><tr>

@@ -19,7 +19,6 @@ $deployment = $viewData->deployment;
         <tr>
             <th style="width:30%;">Host</th>
             <th style="width:25%;">IP</th>
-            <th>SubDeployment</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -31,7 +30,6 @@ if ((isset($_SESSION[$deployment]['static-deployments'])) && (!empty($_SESSION[$
         <tr>
             <td style="width:40%;"><?php echo $dArray['host']?></td>
             <td style="width:35%;"><?php echo $dArray['ip']?></td>
-            <td><?php echo isset($dArray['subdeployment'])?$dArray['subdeployment']:'N/A'?></td>
             <td>
                 <a
                     href="action.php?controller=deployment&action=del_static_hostSearch&lp=<?php echo $encIP?>&deployment=<?php echo $deployment?>"

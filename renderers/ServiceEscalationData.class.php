@@ -59,6 +59,9 @@ class ServiceEscalationDataRenderer implements LoggerRendererObject
     {
         $svcEscInfo = array();
         foreach ($testData->svcEscInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($svcEscInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip} controller=svcesc";
@@ -68,6 +71,9 @@ class ServiceEscalationDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldSvcEscInfo = array();
             foreach ($testData->oldSvcEscInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldSvcEscInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_service_escalation_info=[".implode(", ", $oldSvcEscInfo)."]";

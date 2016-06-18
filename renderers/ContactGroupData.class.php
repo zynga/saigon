@@ -59,6 +59,9 @@ class ContactGroupDataRenderer implements LoggerRendererObject
     {
         $contactGroupInfo = array();
         foreach ($testData->contactGroupInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($contactGroupInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -69,6 +72,9 @@ class ContactGroupDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldContactGroupInfo = array();
             foreach ($testData->oldContactGroupInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldContactGroupInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_contact_group_info=[".implode(", ", $oldContactGroupInfo)."]";

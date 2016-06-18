@@ -77,16 +77,6 @@ class CgiCfgController extends Controller
         $cfg['physical_html_path'] = base64_encode($cfg['physical_html_path']);
         $cfg['url_html_path'] = base64_encode($cfg['url_html_path']);
         $cfg['ping_syntax'] = base64_encode($cfg['ping_syntax']);
-        $cfg['authorized_for_system_information'] = implode(',', $cfg['authorized_for_system_information']);
-        $cfg['authorized_for_configuration_information'] = implode(',', $cfg['authorized_for_configuration_information']);
-        $cfg['authorized_for_system_commands'] = implode(',', $cfg['authorized_for_system_commands']);
-        $cfg['authorized_for_all_services'] = implode(',', $cfg['authorized_for_all_services']);
-        $cfg['authorized_for_all_hosts'] = implode(',', $cfg['authorized_for_all_hosts']);
-        $cfg['authorized_for_all_service_commands'] = implode(',', $cfg['authorized_for_all_service_commands']);
-        $cfg['authorized_for_all_host_commands'] = implode(',', $cfg['authorized_for_all_host_commands']);
-        if ((isset($cfg['authorized_for_read_only'])) && (!empty($cfg['authorized_for_read_only']))) {
-            $cfg['authorized_for_read_only'] = implode(',', $cfg['authorized_for_read_only']);
-        }
         $cfg['lock_author_names'] = "1";
         $cfg['use_ssl_authentication'] = "0";
         return $cfg;
@@ -106,33 +96,7 @@ class CgiCfgController extends Controller
         if (($return = RevDeploy::existsDeploymentCgiCfg($deployment, $modrevision)) === true) {
             $viewData->cgicfg = RevDeploy::getDeploymentCgiCfg($deployment, $modrevision);
         } else {
-            $cfg = array();
-            $cfg['main_config_file'] = base64_encode('/usr/local/nagios/etc/nagios.cfg');
-            $cfg['physical_html_path'] = base64_encode('/usr/local/nagios/share');
-            $cfg['url_html_path'] = base64_encode('/nagios');
-            $cfg['show_context_help'] = 0;
-            $cfg['use_pending_states'] = 1;
-            $cfg['use_authentication'] = 1;
-            $cfg['use_ssl_authentication'] = 0;
-            $cfg['authorized_for_system_information'] = "*";
-            $cfg['authorized_for_configuration_information'] = "*";
-            $cfg['authorized_for_system_commands'] = "*";
-            $cfg['authorized_for_all_services'] = "*";
-            $cfg['authorized_for_all_hosts'] = "*";
-            $cfg['authorized_for_all_service_commands'] = "*";
-            $cfg['authorized_for_all_host_commands'] = "*";
-            $cfg['authorized_for_read_only'] = "";
-            $cfg['default_statusmap_layout'] = 5;
-            $cfg['default_statuswrl_layout'] = 4;
-            $cfg['ping_syntax'] = base64_encode('/bin/ping -n -U -c 5 $HOSTADDRESS$');
-            $cfg['refresh_rate'] = 90;
-            $cfg['escape_html_tags'] = 1;
-            $cfg['action_url_target'] = '_blank';
-            $cfg['notes_url_target'] = '_blank';
-            $cfg['lock_author_names'] = 1;
-            $cfg['enable_splunk_integration'] = 0;
-            $cfg['splunk_url'] = base64_encode('http://127.0.0.1:8000/');
-            $viewData->cgicfg = $cfg;
+            $viewData->cgicfg = NagDefaults::getNagiosCGIConfigData();
         }
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->deployment = $deployment;
@@ -149,7 +113,7 @@ class CgiCfgController extends Controller
     {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('cgi_cfg_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $cfgDelete = $this->getParam('delete');

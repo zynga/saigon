@@ -62,6 +62,9 @@ class CommandDataRenderer implements LoggerRendererObject
             if ($key == 'command_line') {
                 $value = base64_decode($value);
             }
+            elseif (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($cmdInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -74,6 +77,9 @@ class CommandDataRenderer implements LoggerRendererObject
             foreach ($testData->oldCmdInfo as $key => $value) {
                 if ($key == 'command_line') {
                     $value = base64_decode($value);
+                }
+                elseif (is_array($value)) {
+                    $value = implode(",", $value);
                 }
                 array_push($oldCmdInfo, "\"$key\" => \"$value\"");
             }

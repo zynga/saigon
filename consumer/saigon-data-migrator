@@ -1,0 +1,97 @@
+#!/usr/bin/env php
+<?php
+require_once dirname(dirname(__FILE__)).'/conf/saigon-data-migrator.inc.php';
+require_once BASE_PATH. '/vendor/autoload.php';
+require_once BASE_PATH.'/lib/classLoader.class.php';
+Saigon_ClassLoader::register();
+
+$options = getopt('hf:t:',array('help', 'from:', 'to:'));
+$datastore = array();
+$log = new NagLogger();
+
+if ( (array_key_exists('h', $options)) || (array_key_exists('help', $options)) ) {
+    print_help();
+}
+
+processargs();
+
+RevDeploy::init($datastore['from'], true);
+$deployments = RevDeploy::getDeployments();
+
+$log->addToLog("Currently Migrating Meta Data for common Deployment");
+MigrateDataStore::copyDeployment('common', $datastore['from'], $datastore['to']);
+MigrateDataStore::copyDeploymentRevisionMeta('common', $datastore['from'], $datastore['to']);
+MigrateDataStore::copyDeploymentRevisions('common', $datastore['from'], $datastore['to']);
+foreach ( $deployments as $deployment ) {
+    if ($deployment == 'common') continue;
+    $log->addToLog("Currently Migrating Meta Data for $deployment Deployment");
+    MigrateDataStore::copyDeployment($deployment, $datastore['from'], $datastore['to']);
+    MigrateDataStore::copyDeploymentRevisionMeta($deployment, $datastore['from'], $datastore['to']);
+    MigrateDataStore::copyDeploymentRevisions($deployment, $datastore['from'], $datastore['to']);
+}
+
+
+function print_help()
+{
+    print "This script is here to facilitate the migration of data from one\n";
+    print "\tdata store to another data store easily.\n\n";
+    print "\t\t[Options]\n";
+    print "\t\t\t[-h|--help]\tPrint this help menu...\n";
+    print "\t\t\t[-f|--from]\tSpecify the data store to migrate from\n";
+    print "\t\t\t[-t|--to]\tSpecify the data store to migrate to\n\n";
+    print "\t\t[Example]\n";
+    print "\t\t\tsaigon-data-migrator -f SaigonRedis -t SaigonES\n";
+    exit(0);
+}
+
+function processargs()
+{
+    global $options, $datastore;
+
+    if (    ((!isset($options['f'])) || (empty($options['f']))) &&
+            ((!isset($options['from'])) || (empty($options['from'])))
+        ) {
+        print "\nError: Unable to detect usable from argument for data store specification, directing to help menu\n\n";
+        print_help();
+    }
+    elseif (((isset($options['f'])) && (!empty($options['f']))) &&
+            ((isset($options['from'])) && (!empty($options['from'])))
+        ) {
+        print "\nError: Unable to use both from arguments for data store specification, directing to help menu\n\n";
+        print_help();
+    }
+    elseif ((isset($options['f'])) && (!empty($options['f']))) {
+        $datastore['from'] = $options['f'];
+    }
+    elseif ((isset($options['from'])) && (!empty($options['from']))) {
+        $datastore['from'] = $options['from'];
+    }
+    else {
+        print "\nError: I'm not really sure how you got here, check your execution vs the Example\n\n";
+        print_help();
+    }
+
+    if (    ((!isset($options['t'])) || (empty($options['t']))) &&
+            ((!isset($options['to'])) || (empty($options['to'])))
+        ) {
+        print "\nError: Unable to detect usable to argument for data store specification, directing to help menu\n\n";
+        print_help();
+    }
+    elseif (((isset($options['t'])) && (!empty($options['t']))) &&
+            ((isset($options['to'])) && (!empty($options['to'])))
+        ) {
+        print "\nError: Unable to use both to arguments for data store specification, directing to help menu\n\n";
+        print_help();
+    }
+    elseif ((isset($options['t'])) && (!empty($options['t']))) {
+        $datastore['to'] = $options['t'];
+    }
+    elseif ((isset($options['to'])) && (!empty($options['to']))) {
+        $datastore['to'] = $options['to'];
+    }
+    else {
+        print "\nError: I'm not really sure how you got here, check your execution vs the Example\n\n";
+        print_help();
+    }
+
+}

@@ -18,7 +18,7 @@ class TimeperiodController extends Controller {
             $viewData->error = 'Unable to detect incoming timeperiod parameters, make sure all of your input fields are filled in';
             $viewData->timeInfo = $timeInfo;
             $viewData->action = $action;
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->deployment = $deployment;
             $this->sendResponse('timeperiod_action_stage', $viewData);
         } else if (preg_match_all('/[^a-zA-Z0-9_-]/s', $timeInfo['timeperiod_name'], $forbidden)) {
@@ -26,7 +26,7 @@ class TimeperiodController extends Controller {
             $viewData->error = 'Unable to use timeperiod name specified, detected forbidden characters "'.implode('', array_unique($forbidden[0])).'"';
             $viewData->timeInfo = $timeInfo;
             $viewData->action = $action;
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->deployment = $deployment;
             $this->sendResponse('timeperiod_action_stage', $viewData);
         }
@@ -41,7 +41,7 @@ class TimeperiodController extends Controller {
             $_SESSION[$deployment] = array();
         }
         $_SESSION[$deployment]['timeperiods'] = array();
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $this->sendResponse('timeperiod_stage', $viewData);
     }
@@ -50,7 +50,7 @@ class TimeperiodController extends Controller {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('timeperiod_error');
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->action = 'add_write';
         $this->sendResponse('timeperiod_action_stage', $viewData);
@@ -87,7 +87,7 @@ class TimeperiodController extends Controller {
     public function add_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('timeperiod_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -140,14 +140,14 @@ class TimeperiodController extends Controller {
         $viewData->deployment = $deployment;
         $viewData->timeInfo = $timeInfo;
         $viewData->action = 'modify_write';
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $this->sendResponse('timeperiod_action_stage', $viewData);
     }
 
     public function modify_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('timeperiod_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -196,7 +196,7 @@ class TimeperiodController extends Controller {
     public function del_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('timeperiod_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $timeName = $this->getParam('timeperiod');
         if ($timeName === false) {
@@ -233,7 +233,7 @@ class TimeperiodController extends Controller {
             $viewData->error = 'Unable to fetch timeperiod data for '.$timeName.' from data store';
             $this->sendError('generic_error', $viewData);
         }
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->timeInfo = $timeInfo;
         unset($_SESSION[$deployment]['timeperiods']);
@@ -255,21 +255,19 @@ class TimeperiodController extends Controller {
             $this->sendError('generic_error', $viewData);
         }
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $commonrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $timeInfo = RevDeploy::getDeploymentTimeperiodInfo($commonRepo, $timeName, $commonrevision);
+        $timeInfo = RevDeploy::getCommonMergedDeploymentTimeperiod($deployment, $timeName, $modrevision);
         if (empty($timeInfo)) {
             $viewData->header = $this->getErrorHeader('timeperiod_error');
             $viewData->error = 'Unable to fetch timeperiod information for '.$timeName.' from data store';
             $this->sendError('generic_error', $viewData);
         }
-        $timeData = RevDeploy::getDeploymentTimeperiodData($commonRepo, $timeName, $commonrevision);
+        $timeData = RevDeploy::getCommonMergedDeploymentTimeperiodData($deployment, $timeName, $modrevision);
         if (empty($timeData)) {
             $viewData->header = $this->getErrorHeader('timeperiod_error');
             $viewData->error = 'Unable to fetch timeperiod data for '.$timeName.' from data store';
             $this->sendError('generic_error', $viewData);
         }
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->timeInfo = $timeInfo;
         unset($_SESSION[$deployment]['timeperiods']);
@@ -284,17 +282,16 @@ class TimeperiodController extends Controller {
     public function copy_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('timeperiod_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $timeName = $this->getParam('tpName');
         $tpArray = $_SESSION[$deployment]['timeperiods'];
         $timeInfo = $this->fetchTimeperiodInfo($deployment, 'copy_write', $modrevision);
         if (RevDeploy::existsDeploymentTimeperiod($deployment, $timeName, $modrevision) === true) {
+            $viewData->header = $this->getErrorHeader('timeperiod_error');
             $viewData->error = 'Timeperiod information exists for '.$timeName.' in '.$deployment.' Deployment';
-            $viewData->timeInfo = $timeInfo;
-            $viewData->action = 'copy_write';
-            $this->sendResponse('timeperiod_action_stage', $viewData);
+            $this->sendResponse('generic_error', $viewData);
         }
         if (RevDeploy::createDeploymentTimeperiod($deployment, $timeName, $timeInfo, $tpArray, $modrevision) === false) {
             $viewData->header = $this->getErrorHeader('timeperiod_error');

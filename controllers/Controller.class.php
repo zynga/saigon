@@ -149,18 +149,40 @@ class Controller
     }
 
     /**
-     * checkGroupAuth 
+     * checkGroupAuthByDeployment 
      * 
      * @param mixed $deployment deployment we are checking auth for
      *
      * @access public
      * @return void
      */
-    public function checkGroupAuth($deployment, $api = false)
+    public function checkGroupAuthByDeployment($deployment, $api = false)
     {
         $amodule = AUTH_MODULE;
         $authmodule = new $amodule();
-        $return = $authmodule->checkAuth($deployment);
+        $return = $authmodule->checkAuthByDeployment($deployment);
+        if (($return === false) && ($api === false)) {
+            $viewData = new ViewData();
+            $viewData->header = $this->getErrorHeader('site_error');
+            $viewData->error = 'Unable to process request; user lacks appropriate permissions to perform command';
+            $this->sendError('generic_error', $viewData);
+        }
+        return $return;
+    }
+
+    /**
+     * checkGroupAuthByGroup 
+     * 
+     * @param mixed $authgroup specific authgroup we are checking auth for
+     *
+     * @access public
+     * @return void
+     */
+    public function checkGroupAuthByGroup($authgroup, $api = false)
+    {
+        $amodule = AUTH_MODULE;
+        $authmodule = new $amodule();
+        $return = $authmodule->checkAuthByGroup($authgroup);
         if (($return === false) && ($api === false)) {
             $viewData = new ViewData();
             $viewData->header = $this->getErrorHeader('site_error');
@@ -227,7 +249,7 @@ class Controller
         $deployments = RevDeploy::getDeployments();
         $viewDeployments = array();
         foreach ($deployments as $deployment) {
-            if (($return = $this->checkGroupAuth($deployment, true)) === true) {
+            if (($return = $this->checkGroupAuthByDeployment($deployment, true)) === true) {
                 array_push($viewDeployments, $deployment);
             }
         }
@@ -294,6 +316,8 @@ class Controller
                 return "Service Template Error Detected"; break;
             case "timeperiod_error":
                 return "Timeperiod Error Detected"; break;
+            case "cluster_cmds_error":
+                return "Clustered Commands Error Detected"; break;
             default:
                 return "Generic Site Error Detected"; break;
         }

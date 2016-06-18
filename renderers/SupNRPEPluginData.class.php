@@ -59,6 +59,9 @@ class SupNRPEPluginDataRenderer implements LoggerRendererObject
     {
         $supnrpepluginInfo = array();
         foreach ($testData->supnrpepluginInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($supnrpepluginInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -69,6 +72,9 @@ class SupNRPEPluginDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldSupNRPEPluginInfo = array();
             foreach ($testData->oldSupNRPEPluginInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldSupNRPEPluginInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_nrpe_sup_plugin_info=[".implode(", ", $oldSupNRPEPluginInfo)."]";

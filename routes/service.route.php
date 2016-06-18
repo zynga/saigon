@@ -40,8 +40,15 @@ function service_validate ($app, $deployment, $serviceInfo) {
             case "contacts":
             case "contact_groups":
             case "servicegroups":
-                if (is_array($value)) $value = implode(',', $value);
-                validateForbiddenChars($app, $deployment, '/[^\w.-]/s', $key, $value); break;
+                if (is_array($value)) {
+                    foreach ($value as $subvalue) {
+                        validateForbiddenChars($app, $deployment, '/[^\w.-]/s', $key, $subvalue);
+                    }
+                    break;
+                }
+                else {
+                    validateForbiddenChars($app, $deployment, '/[^\w.-]/s', $key, $value); break;
+                }
             case "is_volatile":
             case "active_checks_enabled":
             case "passive_checks_enabled":

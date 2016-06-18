@@ -18,6 +18,7 @@ require_once BASE_PATH.'/lib/classLoader.class.php';
 Saigon_ClassLoader::register();
 
 $naglogger = new NagLogger();
+$hostname = gethostname();
 
 $deployment = DEPLOYMENT;
 if (empty($deployment)) {
@@ -39,10 +40,10 @@ if (file_exists(PID_FILE)) {
 }
 
 $naglogger->addToLog("Now building nagios deployment files in a temporary location, if changes are detected and configuration checks pass, the files will then be moved from the temporary location and placed in the production folder, before the nagios service is restarted");
-NagCreate::setSubDeployment(SUBDEPLOYMENT);
 $buildReturn = NagCreate::buildDeployment($deployment);
 if ($buildReturn !== true) {
     $naglogger->addToLog("Nagios Configuration Failed to Build Deployment: $buildReturn");
+    sendchatmsg("Nagios Configuration Failed to Build; Host: $hostname / Deployment $deployment / Build Error: $buildReturn");
     cleanandexit(1);
 }
 
@@ -50,6 +51,7 @@ $testReturn = NagCreate::testDeployment($deployment);
 if ($testReturn['exitcode'] != 0) {
     $naglogger->addToLog("Nagios Configuration Testing Failed");
     $naglogger->addToLog($testReturn['output']);
+    sendchatmsg("Nagios Configuration Testing Failed; Host: $hostname / Deployment: $deployment");
     cleanandexit(1);
 }
 
@@ -67,6 +69,7 @@ if (!empty($moveReturn)) {
     $restartReturn = NagCreate::restartNagios();
     if ($restartReturn['exitcode'] != 0) {
         $naglogger->addToLog("Error Restarting Nagios");
+        sendchatmsg("Error Restarting Nagios; Host: $hostname / Deployment: $deployment");
         cleanandexit(1);
     }
     $naglogger->addToLog("Nagios Successfully restarted, Exiting process...");
@@ -75,6 +78,14 @@ if (!empty($moveReturn)) {
 
 $naglogger->addToLog("Nagios Configuration Creation Successful, Unable to detect config differences between tmp and current production configs, exiting process...");
 cleanandexit(0);
+
+function sendchatmsg($message)
+{
+    if (CHAT_INTEGRATION !== true) return;
+    $chat_rooms = NagCreate::getChatRooms();
+    if ($chat_rooms === false) return;
+    Chat::messageByRooms($chat_rooms, $message, 'red');
+}
 
 function cleanandexit($exitcode)
 {

@@ -1,15 +1,10 @@
 <?php
 
 $credentials = array(
-    "account1" => array(
-        "secret" => "secret_provided_by_aws",
-        "key" => "key_provided_by_aws",
-        "region" => "valid_aws_region",
-    ),
-    "account2" => array(
-        "secret" => "secret_provided_by_aws",
-        "key" => "key_provided_by_aws",
-        "region" => "valid_aws_region",
+    "useast1" => array(
+        "secret" => "WNUXq1ez1qFpzLAChjjOfH2oXZWZCmJod/3w/ehM",
+        "key" => "AKIAJAJMXHWTZMGP3B6Q",
+        "region" => "us-east-1",
     ),
 );
 

@@ -59,6 +59,9 @@ class HostGroupDataRenderer implements LoggerRendererObject
     {
         $hostGroupInfo = array();
         foreach ($testData->hostInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($hostGroupInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -69,6 +72,9 @@ class HostGroupDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldHostGroupInfo = array();
             foreach ($testData->oldHostInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldHostGroupInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_host_group_info=[".implode(", ", $oldHostGroupInfo)."]";

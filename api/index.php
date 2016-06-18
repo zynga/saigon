@@ -22,7 +22,7 @@ $app = new \Slim\Slim();
 
 \Slim\Route::setDefaultConditions(
     array(
-        'deployment' => '[a-zA-Z0-9_-]{1,}',
+        'deployment' => '[a-z0-9_-]{1,}',
         'staged'     => '[1]',
         'merged'     => '[1]'
     )

@@ -66,12 +66,12 @@ $app->get('/sapi/timeperiodsmeta/:deployment(/:staged)', function($deployment, $
     $apiResponse = new APIViewData(0, $deployment, false);
     if ($commonMerge == 1) {
         $apiResponse->setExtraResponseData('timeperiods',
-            RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $deployRev)
+            RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $deployRev)
         );
     }
     else {
         $apiResponse->setExtraResponseData('timeperiods',
-            RevDeploy::getDeploymentTimeperiodswInfo($deployment, $deployRev)
+            RevDeploy::getDeploymentTimeperiodsMetaInfo($deployment, $deployRev)
         );
     }
     $apiResponse->printJson();

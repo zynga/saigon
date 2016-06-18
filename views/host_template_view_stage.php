@@ -18,7 +18,7 @@ function isdefined ($hostinfo, $key, $split = false) {
 }
 
 function onoffdefined ($hostinfo, $key) {
-    if ((isset($hostinfo[$key])) && (!empty($hostinfo[$key]))) {
+    if (isset($hostinfo[$key])) {
         if ($hostinfo[$key] == 0) return 'Off';
         else return 'On';
     }

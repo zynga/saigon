@@ -14,7 +14,7 @@ class CDCRouterVMs implements HostAPI
         if (strtolower(MODE) == 'secure') {
             return null;
         }
-        $output = CDC_DS::getRouterZones();
+        $output = RevDeploy::getCDCRouterZones();
         $results = array_flip($output);
         return $results;
     }

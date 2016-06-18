@@ -59,6 +59,9 @@ class NagiosPluginDataRenderer implements LoggerRendererObject
     {
         $nagiospluginInfo = array();
         foreach ($testData->nagiospluginInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($nagiospluginInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -69,6 +72,9 @@ class NagiosPluginDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldNagiosPluginInfo = array();
             foreach ($testData->oldNagiosPluginInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldNagiosPluginInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_nagios_plugin_info=[".implode(", ", $oldNagiosPluginInfo)."]";

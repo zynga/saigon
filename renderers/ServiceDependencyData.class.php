@@ -59,6 +59,9 @@ class ServiceDependencyDataRenderer implements LoggerRendererObject
     {
         $svcDepInfo = array();
         foreach ($testData->svcDepInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($svcDepInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip} controller=svcdep";
@@ -68,6 +71,9 @@ class ServiceDependencyDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldSvcDepInfo = array();
             foreach ($testData->oldSvcDepInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldSvcDepInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_service_dependency_info=[".implode(", ", $oldSvcDepInfo)."]";

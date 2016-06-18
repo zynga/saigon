@@ -55,7 +55,7 @@ class SvcGrpController extends Controller {
     public function add_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $svcGrpInfo = $this->fetchSvcInfo($deployment, 'add_write');
@@ -97,7 +97,7 @@ class SvcGrpController extends Controller {
     public function modify_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->deployment = $deployment;
@@ -133,7 +133,7 @@ class SvcGrpController extends Controller {
     public function del_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $svcGrpName = $this->getParam('svcName');
         if ($svcGrpName === false) {
@@ -173,9 +173,8 @@ class SvcGrpController extends Controller {
             $viewData->error = 'Unable to detect service specified in post params';
             $this->sendError('generic_error', $viewData);
         }
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $commonrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $viewData->svcGrpInfo = RevDeploy::getDeploymentSvcGroup($commonRepo, $svcGrpName, $commonrevision);
+        $modrevision = RevDeploy::getDeploymentNextRev($deployment);
+        $viewData->svcGrpInfo = RevDeploy::getCommonMergedDeploymentSvcGroup($deployment, $svcGrpName, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->action = 'copy_write';
         $this->sendResponse('svc_group_action_stage', $viewData);
@@ -184,7 +183,7 @@ class SvcGrpController extends Controller {
     public function copy_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $svcGrpName = $this->getParam('svcName');

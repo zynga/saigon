@@ -9,7 +9,8 @@
 interface Auth
 {
     // Return false if function is not used in your class 
-    public function checkAuth($deployment);
+    public function checkAuthByDeployment($deployment);
+    public function checkAuthByGroup($authgroup);
     public function getTitle();
     public static function getUser();
 }

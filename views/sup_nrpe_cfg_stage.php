@@ -11,7 +11,7 @@ $deployment = $viewData->deployment;
 $jsdata = json_encode($viewData->nrpecmds);
 
 $filelocation = isset($viewData->nrpecfg['location'])?$viewData->nrpecfg['location']:"/usr/local/nagios/etc/nrpe.d/" . $deployment . ".cfg";
-$supcmds = isset($viewData->nrpecfg['cmds'])?explode(',', $viewData->nrpecfg['cmds']):array();
+$supcmds = isset($viewData->nrpecfg['cmds'])?$viewData->nrpecfg['cmds']:array();
 
 ?>
 <link type="text/css" rel="stylesheet" href="static/css/tables.css" />

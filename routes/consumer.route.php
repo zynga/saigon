@@ -16,48 +16,11 @@
  * Saigon Meta Info Call
  */
 
-$app->get('/sapi/consumer/saigoninfo/:deployment(/:subdeployment)', function($deployment, $subdeployment = false) use ($app) {
+$app->get('/sapi/consumer/saigoninfo/:deployment', function($deployment) use ($app) {
     check_deployment_exists($app, $deployment);
     $deployRev = RevDeploy::getDeploymentRev($deployment);
     $deploymentData = RevDeploy::getDeploymentData($deployment, $deployRev);
     $apiResponse = new APIViewData(0, $deployment, false);
-    if ($subdeployment !== false) {
-        $apiResponse->setExtraResponseData('subdeployment', $subdeployment);
-        $hostsearchresults = array();
-        foreach ($deploymentData['hostsearches'] as $key => $hostsearch) {
-            if ($hostsearch['subdeployment'] == $subdeployment) {
-                unset($hostsearch['subdeployment']);
-                $hostsearchresults[] = $hostsearch;
-            }
-        }
-        $deploymentData['hostsearches'] = $hostsearchresults;
-        $nodetemplateresults = array();
-        foreach ($deploymentData['nodetemplates'] as $key => $templateinfo) {
-            if ($templateinfo['subdeployment'] == $subdeployment) {
-                unset($templateinfo['subdeployment']);
-                $nodetemplateresults[$key] = $templateinfo;
-            }
-        }
-        $deploymentData['nodetemplates'] = $nodetemplateresults;
-        $statichostsresults = array();
-        foreach ($deploymentData['statichosts'] as $key => $statichostinfo) {
-            if ($statichostinfo['subdeployment'] == $subdeployment) {
-                unset($statichostinfo['subdeployment']);
-                $statichostsresults[$key] = $statichostinfo;
-            }
-        }
-        $deploymentData['statichosts'] = $statichostsresults;
-    } else {
-        foreach ($deploymentData['hostsearches'] as $key => $hostsearch) {
-            unset($deploymentData['hostsearches'][$key]['subdeployment']);
-        }
-        foreach ($deploymentData['nodetemplates'] as $key => $nodetemplate) {
-            unset($deploymentData['nodetemplates'][$key]['subdeployment']);
-        }
-        foreach ($deploymentData['statichosts'] as $key => $statichostinfo) {
-            unset($deploymentData['statichosts'][$key]['subdeployment']);
-        }
-    }
     $apiResponse->setExtraResponseData('saigon', $deploymentData);
     $apiResponse->printJson();
 });
@@ -275,14 +238,14 @@ $app->get('/sapi/consumer/modgearmanconfig/:deployment', function($deployment) u
 
 $app->get('/sapi/consumer/routervms/:zone', function($zone) use ($app) {
     $zone = strtoupper($zone);
-    if (CDC_DS::isRouterZone($zone) === false) {
+    if (RevDeploy::existsCDCRouterZone($zone) === false) {
         $apiResponse = new APIViewData(1, false,
             "Unable to detect router vm zone specified: $zone"
         );
         $apiResponse->setExtraResponseData('zone', $zone);
         $app->halt(403, $apiResponse->returnJson());
     }
-    $results = json_decode(CDC_DS::getRouterInfo($zone),true);
+    $results = json_decode(RevDeploy::getCDCRouterZone($zone),true);
     $apiResponse = new APIViewData(0, $zone, false);
     $apiResponse->setExtraResponseData('routervms', $results);
     $apiResponse->printJson();
@@ -295,14 +258,13 @@ $app->get('/sapi/consumer/routervms/:zone', function($zone) use ($app) {
 $app->get('/sapi/consumer/hostaudit/:deployment', function($deployment) use ($app) {
     check_deployment_exists($app, $deployment);
     $hostAuditInfo = array();
-    $hostAuditInfo = NagTester::getDeploymentHostAuditInfo($deployment);
+    $hostAuditInfo = RevDeploy::getConsumerDeploymentInfo($deployment, false, 'hostaudit');
     if (empty($hostAuditInfo)) {
         $apiResponse = new APIViewData(1, $deployment,
             "Unable to detect Saigon Host Audit Results"
         );
         $app->halt(403, $apiResponse->returnJson());
     }
-    $hostAuditInfo = json_decode($hostAuditInfo);
     $apiResponse = new APIViewData(0, $deployment, false);
     foreach ($hostAuditInfo as $key => $value) {
         $apiResponse->setExtraResponseData($key, $value);

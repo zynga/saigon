@@ -175,7 +175,7 @@ class ModgearmanCfgController extends Controller
     {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('modgearman_cfg_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $cfgDelete = $this->getParam('delete');

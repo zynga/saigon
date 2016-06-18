@@ -59,6 +59,9 @@ class ServiceTemplateDataRenderer implements LoggerRendererObject
     {
         $svcTempInfo = array();
         foreach ($testData->svcTempInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($svcTempInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -69,6 +72,9 @@ class ServiceTemplateDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldSvcTempInfo = array();
             foreach ($testData->oldSvcTempInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldSvcTempInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_service_template_info=[".implode(", ", $oldSvcTempInfo)."]";

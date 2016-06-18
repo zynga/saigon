@@ -22,11 +22,6 @@ $(function() {
             noneSelectedText: "Select a Revision",
             multiple: false,
         }).multiselectfilter(),
-    $("#subdeployment")
-        .multiselect({
-            selectedList: 1,
-            multiple: false,
-        }).multiselectfilter(),
     $("#shard")
         .multiselect({
             selectedList: 1,
@@ -76,21 +71,8 @@ if (!empty($allrevs)) {
 }
 ?>
                 </select>
-                <div class="divCacGroup"></div>
-                Please choose a Sub Deployment you would like to show...<br />
-                <select id="subdeployment" name="subdeployment" multiple="multiple">
-                    <option value="" selected>Select Optional SubDeployment</option>
 <?php
-$subdeployments = preg_split('/\s?,\s?/', SUBDEPLOYMENT_TYPES);
-foreach ($subdeployments as $subdeploy) {
-?>
-                    <option value="<?php echo $subdeploy?>"><?php echo $subdeploy?></option>
-<?php
-}
-?>
-                </select>
-<?php
-if ($viewData->deploymentinfo['ensharding'] == 'on') {
+if ((isset($viewData->deploymentinfo['ensharding'])) && ($viewData->deploymentinfo['ensharding'] == 'on')) {
 ?>
                 <div class="divCacGroup"></div>
                 Please choose a Shard you would like to diff...<br />

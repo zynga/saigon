@@ -289,6 +289,7 @@ ln -s %{os_dir}/misc/saigon-tester.monitrc /etc/monit.d/saigon-tester ||:
 %{os_dir}/conf/version.inc.php
 %{os_dir}/conf/cdc_creds.ini
 %{os_dir}/conf/nrperpm.inc.php
+%{os_dir}/conf/thirdpartymodules.inc.php
 %{os_dir}/vendor
 
 %files ui

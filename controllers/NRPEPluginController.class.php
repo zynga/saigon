@@ -73,7 +73,7 @@ class NRPEPluginController extends Controller {
     public function add_plugin() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nrpe_plugin_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -97,7 +97,7 @@ class NRPEPluginController extends Controller {
     public function modify_plugin() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nrpe_plugin_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -121,7 +121,7 @@ class NRPEPluginController extends Controller {
     public function delete_plugin() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nrpe_plugin_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $plugin = $this->getPlugin('nrpe_plugin_error');
         $viewData->deployment = $deployment;
@@ -147,9 +147,8 @@ class NRPEPluginController extends Controller {
         $deployment = $this->getDeployment('nrpe_plugin_error');
         $viewData->deployment = $deployment;
         $plugin = $this->getPlugin('nrpe_plugin_error');
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $modrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $viewData->plugin = RevDeploy::getDeploymentNRPEPlugin($commonRepo, $plugin, $modrevision);
+        $modrevision = RevDeploy::getDeploymentNextRev($deployment);
+        $viewData->plugin = RevDeploy::getCommonMergedDeploymentNRPEPlugin($deployment, $plugin, $modrevision);
         $viewData->action = 'view';
         $this->sendResponse('nrpe_plugin_view_stage', $viewData);
     }
@@ -173,9 +172,8 @@ class NRPEPluginController extends Controller {
         $viewData->deployment = $deployment;
         array_push($deployments, $deployment);
         $plugin = $this->getPlugin('nrpe_plugin_error');
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $modrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $viewData->plugin = RevDeploy::getDeploymentNRPEPlugin($commonRepo, $plugin, $modrevision);
+        $modrevision = RevDeploy::getDeploymentNextRev($deployment);
+        $viewData->plugin = RevDeploy::getCommonMergedDeploymentNRPEPlugin($deployment, $plugin, $modrevision);
         $viewData->availdeployments = $deployments;
         $viewData->ccs = true;
         $viewData->action = 'copy_to_write';
@@ -192,7 +190,7 @@ class NRPEPluginController extends Controller {
             $viewData->error = 'Unable to detect deployment to copy plugin to';
             $this->sendResponse('generic_error', $viewData);
         }
-        $this->checkGroupAuth($todeployment);
+        $this->checkGroupAuthByDeployment($todeployment);
         $this->checkDeploymentRevStatus($todeployment);
         $tdRev = RevDeploy::getDeploymentNextRev($todeployment);
         $deployRev = RevDeploy::getDeploymentNextRev($deployment);
@@ -233,7 +231,7 @@ class NRPEPluginController extends Controller {
     public function add_sup_plugin() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('sup_nrpe_plugin_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -257,7 +255,7 @@ class NRPEPluginController extends Controller {
     public function modify_sup_plugin() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('sup_nrpe_plugin_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $pluginInfo = $this->fetchPluginInfo($deployment, 'modify_sup_plugin', 'sup_nrpe_plugin_action_stage', $modrevision);
@@ -281,7 +279,7 @@ class NRPEPluginController extends Controller {
     public function delete_sup_plugin() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('sup_nrpe_plugin_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $plugin = $this->getPlugin('sup_nrpe_plugin_error');
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -306,9 +304,8 @@ class NRPEPluginController extends Controller {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('sup_nrpe_plugin_error');
         $plugin = $this->getPlugin('sup_nrpe_plugin_error');
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $modrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $viewData->plugin = RevDeploy::getDeploymentSupNRPEPlugin($commonRepo, $plugin, $modrevision);
+        $modrevision = RevDeploy::getDeploymentNextRev($deployment);
+        $viewData->plugin = RevDeploy::getCommonMergedDeploymentSupNRPEPlugin($deployment, $plugin, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->action = 'view';
         $this->sendResponse('sup_nrpe_plugin_view_stage', $viewData);
@@ -333,9 +330,8 @@ class NRPEPluginController extends Controller {
         $viewData->deployment = $deployment;
         array_push($deployments, $deployment);
         $plugin = $this->getPlugin('sup_nrpe_plugin_error');
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $modrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $viewData->plugin = RevDeploy::getDeploymentSupNRPEPlugin($commonRepo, $plugin, $modrevision);
+        $modrevision = RevDeploy::getDeploymentNextRev($deployment);
+        $viewData->plugin = RevDeploy::getCommonMergedDeploymentSupNRPEPlugin($deployment, $plugin, $modrevision);
         $viewData->availdeployments = $deployments;
         $viewData->ccs = true;
         $viewData->action = 'copy_to_write_sup';
@@ -352,7 +348,7 @@ class NRPEPluginController extends Controller {
             $viewData->error = 'Unable to detect deployment to copy plugin to';
             $this->sendResponse('generic_error', $viewData);
         }
-        $this->checkGroupAuth($todeployment);
+        $this->checkGroupAuthByDeployment($todeployment);
         $this->checkDeploymentRevStatus($todeployment);
         $tdRev = RevDeploy::getDeploymentNextRev($todeployment);
         $deployRev = RevDeploy::getDeploymentNextRev($deployment);

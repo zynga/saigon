@@ -26,46 +26,10 @@ $app->map('/api/getMGCfg/:deployment', function($deployment) use ($app) {
     $app->halt(403, $apiResponse->returnJson());
 })->via('GET', 'POST');
 
-$app->get('/api/getNagiosCfg/:deployment(/:subdeployment)', function($deployment, $subdeployment = false) use ($app) {
+$app->get('/api/getNagiosCfg/:deployment', function($deployment) use ($app) {
     check_deployment_exists($app, $deployment);
     $deployrev = RevDeploy::getDeploymentRev($deployment);
     $viewData = RevDeploy::getDeploymentData($deployment, $deployrev);
-    if ($subdeployment !== false) {
-        $hostsearchresults = array();
-        foreach ($viewData['hostsearches'] as $key => $hostsearch) {
-            if ($hostsearch['subdeployment'] == $subdeployment) {
-                unset($hostsearch['subdeployment']);
-                $hostsearchresults[] = $hostsearch;
-            }
-        }
-        $viewData['hostsearches'] = $hostsearchresults;
-        $nodetemplateresults = array();
-        foreach ($viewData['nodetemplates'] as $key => $templateinfo) {
-            if ($templateinfo['subdeployment'] == $subdeployment) {
-                unset($templateinfo['subdeployment']);
-                $nodetemplateresults[$key] = $templateinfo;
-            }
-        }
-        $viewData['nodetemplates'] = $nodetemplateresults;
-        $statichostsresults = array();
-        foreach ($viewData['statichosts'] as $key => $statichostinfo) {
-            if ($statichostinfo['subdeployment'] == $subdeployment) {
-                unset($statichostinfo['subdeployment']);
-                $statichostsresults[$key] = $statichostinfo;
-            }
-        }
-        $viewData['statichosts'] = $statichostsresults;
-    } else {
-        foreach ($viewData['hostsearches'] as $key => $hostsearch) {
-            unset($viewData['hostsearches'][$key]['subdeployment']);
-        }
-        foreach ($viewData['nodetemplates'] as $key => $nodetemplate) {
-            unset($viewData['nodetemplates'][$key]['subdeployment']);
-        }
-        foreach ($viewData['statichosts'] as $key => $statichostinfo) {
-            unset($viewData['statichosts'][$key]['subdeployment']);
-        }
-    }
     // This sucks, we need to reverse some of the data manipulation that was made
     // lower in the stack... however, this is only to support legacy, so it is what it is...
     foreach ($viewData['contacttemplates'] as $key => $infoArray) {
@@ -295,14 +259,14 @@ $app->map('/api/getSupNRPEPlugin/:deployment/:plugins', function($deployment, $p
 
 $app->map('/api/getRouterVM/:zone', function($zone) use ($app) {
     $zone = strtoupper($zone);
-    if (CDC_DS::isRouterZone($zone) === false) {
+    if (RevDeploy::existsCDCRouterZone($zone) === false) {
         $apiResponse = new APIViewData(1, false,
             "Unable to detect router vm zone specified: $zone"
         );
         $apiResponse->setExtraResponseData('zone', $zone);
         $app->halt(403, $apiResponse->returnJson());
     }
-    $results = CDC_DS::getRouterInfo($zone);
+    $results = RevDeploy::getCDCRouterZone($zone);
     echo $results;
     return;
 })->via('GET', 'POST');
@@ -314,15 +278,7 @@ $app->map('/api/getNagiosPlugin/:deployment/:plugins', function($deployment, $pl
         $tmpplugins = preg_split('/,\s?/', $plugins);
         $results = array();
         foreach ($tmpplugins as $plugin) {
-            $plugindata = RevDeploy::getDeploymentNagiosPlugin($deployment, $plugin, $deployrev);
-            if (empty($plugindata)) {
-                $commonrev = RevDeploy::getDeploymentRev('common');
-                $plugindata = RevDeploy::getDeploymentNagiosPlugin('common', $plugin, $commonrev);
-                if (empty($plugindata)) {
-                    $results[$plugin] = array();
-                    continue;
-                }
-            }
+            $plugindata = RevDeploy::getCommonMergedDeploymentNagiosPlugin($deployment, $plugin, $deployrev);
             unset($plugindata['deployment']);
             unset($plugindata['desc']);
             $results[$plugin] = $plugindata;
@@ -336,17 +292,7 @@ $app->map('/api/getNagiosPlugin/:deployment/:plugins', function($deployment, $pl
         );
         $app->halt(403, $apiResponse->returnJson());
     } else {
-        $plugindata = RevDeploy::getDeploymentNagiosPlugin($deployment, $plugins, $deployrev);
-        if (empty($plugindata)) {
-            $commonrev = RevDeploy::getDeploymentRev('common');
-            $plugindata = RevDeploy::getDeploymentNagiosPlugin('common', $plugins, $commonrev);
-            if (empty($plugindata)) {
-                $apiResponse = new APIViewData(1, $deployment,
-                    "Unable to detect specified nagios plugin: $plugins"
-                );
-                $app->halt(403, $apiResponse->returnJson());
-            }
-        }
+        $plugindata = RevDeploy::getCommonMergedDeploymentNagiosPlugin($deployment, $plugins, $deployrev);
         unset($plugindata['deployment']);
         unset($plugindata['desc']);
         $results[$plugins] = $plugindata;

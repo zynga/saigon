@@ -136,11 +136,11 @@ if ((isset($viewData->meta['status'])) && ($viewData->meta['status'] == 'success
         $tmpArray = explode(".", $dKey);
 ?>
     <div id="file-container" class="divCacGroup">
-        <div id="<?php echo $tmpArray[0]?>" class="parentClass" style="text-align:left;">
+        <div id="np-<?php echo $tmpArray[0]?>" class="parentClass" style="text-align:left;">
             <img src="static/imgs/plusSign.gif">
             File: <?php echo $dKey?>
         </div>
-        <div class="parent-desc-<?php echo $tmpArray[0]?> divHide">
+        <div class="parent-desc-np-<?php echo $tmpArray[0]?> divHide">
             <pre class="brush: php; toolbar: false;" type="syntaxhighlighter">
 <?php
         $renderer = new Diff_Renderer_Text_Unified();
@@ -163,11 +163,11 @@ if ((isset($viewData->meta['status'])) && ($viewData->meta['status'] == 'success
         $tmpArray = explode(".", $dKey);
 ?>
     <div id="file-container" class="divCacGroup">
-        <div id="<?php echo $tmpArray[0]?>" class="parentClass" style="text-align:left;">
+        <div id="nrpep-<?php echo $tmpArray[0]?>" class="parentClass" style="text-align:left;">
             <img src="static/imgs/plusSign.gif">
             File: <?php echo $dKey?>
         </div>
-        <div class="parent-desc-<?php echo $tmpArray[0]?> divHide">
+        <div class="parent-desc-nrpep-<?php echo $tmpArray[0]?> divHide">
             <pre class="brush: php; toolbar: false;" type="syntaxhighlighter">
 <?php
         $renderer = new Diff_Renderer_Text_Unified();
@@ -190,11 +190,11 @@ if ((isset($viewData->meta['status'])) && ($viewData->meta['status'] == 'success
         $tmpArray = explode(".", $dKey);
 ?>
     <div id="file-container" class="divCacGroup">
-        <div id="<?php echo $tmpArray[0]?>" class="parentClass" style="text-align:left;">
+        <div id="nrpesp-<?php echo $tmpArray[0]?>" class="parentClass" style="text-align:left;">
             <img src="static/imgs/plusSign.gif">
             File: <?php echo $dKey?>
         </div>
-        <div class="parent-desc-<?php echo $tmpArray[0]?> divHide">
+        <div class="parent-desc-nrpesp-<?php echo $tmpArray[0]?> divHide">
             <pre class="brush: php; toolbar: false;" type="syntaxhighlighter">
 <?php
         $renderer = new Diff_Renderer_Text_Unified();
@@ -211,6 +211,7 @@ if ((isset($viewData->meta['status'])) && ($viewData->meta['status'] == 'success
 <script type="text/javascript">
     SyntaxHighlighter.all()
 </script>
+<div class="divCacGroup"></div>
 </div>
 <?php
 require HTML_FOOTER;

@@ -18,12 +18,9 @@ class NagRequest
      * @access public
      * @return void
      */
-    public static function fetchDeploymentData($deployment, $subdeployment = false)
+    public static function fetchDeploymentData($deployment)
     {
         $url = SAIGONAPI_URL . '/getNagiosCfg/' . $deployment;
-        if (($subdeployment !== false) && (!empty($subdeployment))) {
-            $url .= '/' . $subdeployment;
-        }
         return self::_fetchData($url);
     }
 

@@ -27,7 +27,6 @@ class NRPECfgController extends Controller {
         if (($nrpecfg['cmds'] === false) || (empty($nrpecfg['cmds']))) {
             return false;
         }
-        $nrpecfg['cmds'] = implode(',', $nrpecfg['cmds']);
         if ($nrpecfg['location'] === false) {
             $viewData = new ViewData();
             $viewData->error = 'Unable to detect file location';
@@ -121,9 +120,6 @@ class NRPECfgController extends Controller {
             $viewData->deployment = $deployment;
             $this->sendResponse($action, $viewData);
         }
-        if ($supnrpeInfo['cmds'] !== false) {
-            $supnrpeInfo['cmds'] = implode(',', $supnrpeInfo['cmds']);
-        }
         return $supnrpeInfo;
     }
 
@@ -142,7 +138,7 @@ class NRPECfgController extends Controller {
     public function write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nrpe_cfg_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $nrpecfgInfo = $this->fetchNRPECfgInfo($deployment, 'nrpe_cfg_stage', $modrevision);
@@ -190,7 +186,7 @@ class NRPECfgController extends Controller {
     public function supwrite() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('sup_nrpe_cfg_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $supnrpeInfo = $this->fetchSupNRPEInfo($deployment, 'sup_nrpe_cfg_stage', $modrevision);
@@ -236,7 +232,7 @@ class NRPECfgController extends Controller {
     public function import_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nrpe_cfg_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $filelocation = $this->getParam('location');
@@ -276,7 +272,7 @@ class NRPECfgController extends Controller {
     public function sup_import_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('sup_nrpe_cfg_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $filelocation = $this->getParam('location');

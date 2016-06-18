@@ -59,6 +59,9 @@ class NRPEPluginDataRenderer implements LoggerRendererObject
     {
         $nrpepluginInfo = array();
         foreach ($testData->nrpepluginInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($nrpepluginInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -69,6 +72,9 @@ class NRPEPluginDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldNRPEPluginInfo = array();
             foreach ($testData->oldNRPEPluginInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldNRPEPluginInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_nrpe_plugin_info=[".implode(", ", $oldNRPEPluginInfo)."]";

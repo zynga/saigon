@@ -18,11 +18,10 @@ if (!defined('BASE_PATH')) {
 require_once(BASE_PATH.'/conf/version.inc.php');
 /* Import Mode Info */
 require_once(BASE_PATH.'/conf/role.inc.php');
+/* Import Distribution Info */
+require_once BASE_PATH.'/conf/dist.inc.php';
 /* Global Information */
 if (strtolower(MODE) == 'prod') {
-    /* Redis Cluster Information */
-    define('REDIS_CLUSTER', '127.0.0.1:6379');
-    define('REDIS_PREFIX', null);
     /* Define Debug Flag */
     define('DEBUG', false);
     /* Audit trail log file */
@@ -32,9 +31,6 @@ if (strtolower(MODE) == 'prod') {
     define('BEANSTALKD_SERVER', '127.0.0.1');
     define('BEANSTALKD_TUBE', 'saigon-build');
 } else if (strtolower(MODE) == 'secure') {
-    /* Redis Cluster Information */
-    define('REDIS_CLUSTER', '127.0.0.1:6379');
-    define('REDIS_PREFIX', null);
     /* Define Debug Flag */
     define('DEBUG', false);
     /* Audit trail log file */
@@ -44,9 +40,6 @@ if (strtolower(MODE) == 'prod') {
     define('BEANSTALKD_SERVER', '127.0.0.1');
     define('BEANSTALKD_TUBE', 'saigon-build');
 } else {
-    /* Redis Cluster Information */
-    define('REDIS_CLUSTER', '127.0.0.1:6379');
-    define('REDIS_PREFIX', null);
     /* Define Debug Flag */
     define('DEBUG', true);
     /* Audit trail log file */
@@ -62,6 +55,12 @@ require_once(BASE_PATH.'/modules/log4php/Logger.php');
 define('PIDFILE', BASE_PATH.'/var/run/saigon-tester.pid');
 /* Disable sharding capabilities */
 define('SHARDING', false);
+/* Code flag for consumer tripwires */
+define('CONSUMER', true);
+/* Import Datastore Module Info */
+require_once BASE_PATH.'/conf/datastoremodules.inc.php';
 /* Import Host Module Auth Info */
 require_once BASE_PATH.'/conf/hostmodules.inc.php';
+/* Import Third Party Module Info */
+require_once BASE_PATH.'/conf/thirdpartymodules.inc.php';
 

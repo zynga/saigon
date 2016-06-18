@@ -50,8 +50,14 @@ foreach my $deploykey ( keys %{$config->{deployments}} ) {
     my $deployinfo = $config->{deployments}->{$deploykey};
     my $hostname = `/bin/hostname`;
     chomp($hostname);
-    handlecorecfg($deploykey, $deployinfo, $config->{Main}->{version}, $hostname, $config->{Main}->{user});
-    handlesuppcfg($deploykey, $deployinfo, $config->{Main}->{version}, $hostname, $config->{Main}->{user});
+    handlecorecfg(
+        $deploykey, $deployinfo, $config->{Main}->{version}, $hostname, $config->{Main}->{user},
+        $config->{deployments}->{$deploykey}->{enable_ssl}, $config->{deployments}->{$deploykey}->{enable_ssl_verify}
+    );
+    handlesuppcfg(
+        $deploykey, $deployinfo, $config->{Main}->{version}, $hostname, $config->{Main}->{user},
+        $config->{deployments}->{$deploykey}->{enable_ssl}, $config->{deployments}->{$deploykey}->{enable_ssl_verify}
+    );
 }
 
 if ($restartinfo) {
@@ -212,7 +218,7 @@ sub createfile {
 =cut
 
 sub fetchnrpedata {
-    my ($deployment,$url,$actionarg,$version,$hostname) = (@_);
+    my ($deployment,$url,$actionarg,$version,$hostname,$sslenable,$sslverify) = (@_);
     if ($actionarg eq "core") { $url .= "/getNRPECfg"; } 
     elsif ($actionarg eq "supp") { $url .= "/getSupNRPECfg"; }
     else { return 0; }
@@ -228,7 +234,9 @@ sub fetchnrpedata {
     }
     my $ua = LWP::UserAgent->new();
     $ua->agent('Saigon NRPE Data Fetcher/' . $version . ' (' . $ua->_agent . '/' . $interface->address . ')');
-    $ua->ssl_opts('verify_hostname' => 0);
+    if ($sslenable == 1) {
+        $ua->ssl_opts('verify_hostname' => $sslverify);
+    }
     my $response = $ua->get($url);
     if ($response->is_error) {
         return 0;
@@ -251,6 +259,7 @@ sub parseconfigs {
     opendir(DIR, $config->{Main}->{ini_dir}) or die $!;
     foreach my $file (readdir(DIR)) {
         next if (($file eq "..") || ($file eq "."));
+        next if ($file =~ /\.swp$/);
         my $fullfile = $config->{Main}->{ini_dir}."/".$file;
         my $tmpconfig = Config::Auto::parse($fullfile);
         my $deployment = $tmpconfig->{Main}->{deployment};
@@ -271,12 +280,12 @@ sub parseconfigs {
 =cut
 
 sub handlecorecfg {
-    my ($deploykey, $deployinfo, $version, $hostname, $fileowner) = (@_);
+    my ($deploykey, $deployinfo, $version, $hostname, $fileowner, $sslenable, $sslverify) = (@_);
     return if ($deployinfo->{core} == 0);
     my $url = "";
     if ($deployinfo->{core_url}) { $url = $deployinfo->{core_url}; }
     else { $url = $config->{Main}->{nagrequrl}; }
-    my $tmpdata = fetchnrpedata($deploykey, $url, "core", $version, $hostname);
+    my $tmpdata = fetchnrpedata($deploykey, $url, "core", $version, $hostname, $sslenable, $sslverify);
     if (!$tmpdata) {
         print returntime(). " Error Fetching NRPE Configuration for Deployment: " .
             $deployinfo->{deployment} . "\n";
@@ -321,12 +330,12 @@ sub handlecorecfg {
 =cut
 
 sub handlesuppcfg {
-    my ($deploykey, $deployinfo, $version, $hostname, $fileowner) = (@_);
+    my ($deploykey, $deployinfo, $version, $hostname, $fileowner, $sslenable, $sslverify) = (@_);
     return if ($deployinfo->{supplemental} == 0);
     my $url = "";
     if ($deployinfo->{supp_url}) { $url = $deployinfo->{supp_url}; }
     else { $url = $config->{Main}->{nagrequrl}; }
-    my $tmpdata = fetchnrpedata($deploykey, $url, "supp", $version, $hostname);
+    my $tmpdata = fetchnrpedata($deploykey, $url, "supp", $version, $hostname, $sslenable, $sslverify);
     if (!$tmpdata) {
         print returntime(). " Error Fetching Supplemental NRPE Configuration for Deployment: " .
             $deployinfo->{deployment} . "\n";

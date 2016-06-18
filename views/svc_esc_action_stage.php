@@ -250,6 +250,7 @@ foreach ($chkInts as $chkTime => $chkVal) {
         <th style="width:35%;text-align:right;">Timeperiod:<br /><font size="2">(Optional)</font></th>
         <td style="text-align:left;">
             <select id="timeperiod" name="timeperiod" multiple="multiple">
+                <option value=""> - Use Service's Timeperiod - </option>
 <?php
 foreach ($viewData->timeperiods as $timeperiod => $tpArray) {
     if ($timeperiod == $svcEscTimeperiod) {

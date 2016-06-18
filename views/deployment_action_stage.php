@@ -34,7 +34,6 @@ $deployAuthGrps = isset($viewData->deployInfo['authgroups'])?preg_replace('/,\s?
 $deployAuthGrpTitle = isset($viewData->authtitle)?$viewData->authtitle:'Unknown Group Authorization:';
 $deployNagiosHead = isset($viewData->deployInfo['nagioshead'])?$viewData->deployInfo['nagioshead']:'';
 $deployNagiosNegate = isset($viewData->deployInfo['deploynegate'])?$viewData->deployInfo['deploynegate']:'';
-$deployType = (isset($viewData->deployInfo['type']) && !empty($viewData->deployInfo['type']))?$viewData->deployInfo['type']:false;
 $deployRev = (isset($viewData->deployInfo['revision']) && !empty($viewData->deployInfo['revision']))?$viewData->deployInfo['revision']:false;
 $deployNextRev = (isset($viewData->deployInfo['nextrevision']) && !empty($viewData->deployInfo['nextrevision']))?$viewData->deployInfo['nextrevision']:false;
 $deployAliasTemp = isset($viewData->deployInfo['aliastemplate'])?$viewData->deployInfo['aliastemplate']:'host-dc';
@@ -43,6 +42,10 @@ $deployShardKey = isset($viewData->deployInfo['shardkey'])?$viewData->deployInfo
 $deployShardCount = isset($viewData->deployInfo['shardcount'])?$viewData->deployInfo['shardcount']:'1';
 $deployStyle = isset($viewData->deployInfo['deploystyle'])?$viewData->deployInfo['deploystyle']:'both';
 $deployCRepo = isset($viewData->deployInfo['commonrepo'])?$viewData->deployInfo['commonrepo']:'common';
+
+if (CHAT_INTEGRATION === true) {
+    $deployChatRooms = isset($viewData->deployInfo['chat_rooms'])?$viewData->deployInfo['chat_rooms']:'';
+}
 
 ?>
 <link type="text/css" rel="stylesheet" href="static/css/tables.css" />
@@ -81,7 +84,6 @@ function srchParamChange(selectObj) {
 function insertSearchDefinition() {
     var loc = $('#location').val();
     var param = $('#srchparam').val();
-    var subdeploy = $('#subdeployment').val();
     var note = $('#srchnote').val();
 <?php
 if ($builddeployment !== false) {
@@ -98,8 +100,8 @@ if ($builddeployment !== false) {
         url: 'action.php',
         type: 'POST',
         data: 'controller=deployment&action=add_hostSearch&loc=' + encodeURIComponent(loc) 
-            + '&param=' + encodeURIComponent(param) + '&subdeploy=' + encodeURIComponent(subdeploy)
-            + '&note=' + encodeURIComponent(note) + '&deployment=' + encodeURIComponent(deployment),
+            + '&param=' + encodeURIComponent(param) + '&note=' + encodeURIComponent(note)
+            + '&deployment=' + encodeURIComponent(deployment),
         dataType: 'html',
         success: function( data ) {
             $('#searchDefinitions').attr('src', $('#searchDefinitions').attr('src'));
@@ -113,7 +115,6 @@ if ($builddeployment !== false) {
 function insertGPRDefinition() {
     var loc = $('#gpr').val();
     var param = $('#gprparam').val();
-    var subdeploy = $('#subdeployment').val();
     var note = $('#gprnote').val();
 <?php
 if ($builddeployment !== false) {
@@ -130,8 +131,8 @@ if ($builddeployment !== false) {
         url: 'action.php',
         type: 'POST',
         data: 'controller=deployment&action=add_hostSearch&loc=' + encodeURIComponent(loc) 
-            + '&param=' + encodeURIComponent(param) + '&subdeploy=' + encodeURIComponent(subdeploy)
-            + '&note=' + encodeURIComponent(note) + '&deployment=' + encodeURIComponent(deployment),
+            + '&param=' + encodeURIComponent(param) + '&note=' + encodeURIComponent(note)
+            + '&deployment=' + encodeURIComponent(deployment),
         dataType: 'html',
         success: function( data ) {
             $('#searchDefinitions').attr('src', $('#searchDefinitions').attr('src'));
@@ -146,7 +147,6 @@ if ($builddeployment !== false) {
 function insertHostDefinition() {
     var host = $('#statichost').val();
     var ip = $('#staticip').val();
-    var subdeploy = $('#subdeployment').val();
 <?php
 if ($builddeployment !== false) {
 ?>
@@ -162,8 +162,7 @@ if ($builddeployment !== false) {
         url: 'action.php',
         type: 'POST',
         data: 'controller=deployment&action=add_static_host&host=' + encodeURIComponent(host)
-            + '&ip=' + encodeURIComponent(ip) + '&subdeploy=' + encodeURIComponent(subdeploy)
-            + '&deployment=' + encodeURIComponent(deployment),
+            + '&ip=' + encodeURIComponent(ip) + '&deployment=' + encodeURIComponent(deployment),
         dataType: 'html',
         success: function( data ) {
             $('#staticsearchDefinitions').attr('src', $('#staticsearchDefinitions').attr('src'));
@@ -201,12 +200,6 @@ $("#location")
     .multiselect({
         selectedList: 1,
         noneSelectedText: "Select a Location",
-        multiple: false,
-    }).multiselectfilter(),
-$("#subdeployment")
-    .multiselect({
-        selectedList: 1,
-        noneSelectedText: "Select Optional Subdeployment",
         multiple: false,
     }).multiselectfilter();
 });
@@ -296,9 +289,6 @@ if ($action == 'add_write') {
             <input type="text" value="<?php echo $deployNagiosNegate?>" size="64" maxlength="512" id="deploynegate" name="deploynegate" />
             <input type="button" id="regexbutton" value="View Matches" onClick="checkHostRegex()" />
         </td>
-    </tr><tr>
-        <th style="width:30%;text-align:right;">Type:</th>
-        <td style="text-align:left;"><input type="hidden" id="deploytype" name="deploytype" value="<?php echo $deployType?>" />Revision Based</td>
     </tr>
 <?php
 if ($deployRev !== false) {
@@ -351,6 +341,17 @@ foreach ($viewData->crepos as $crepo) {
             <input type="radio" name="aliastemplate" value="host-dc" <?php echo is_checked($deployAliasTemp, 'host-dc')?>>host-dc</input>
             <input type="radio" name="aliastemplate" value="host" <?php echo is_checked($deployAliasTemp, 'host')?>>host</input>
         </td>
+<?php
+    if (CHAT_INTEGRATION === true) {
+?>
+    </tr><tr>
+        <th style="width:30%;text-align:right;">Chat Notification Rooms via <?php echo CHAT_MODULE?>:<br /><font size="2">Supports Comma Seperated Value</font></th>
+        <td style="text-align:left;">
+            <input type="text" value="<?php echo $deployChatRooms?>" size="64" maxlength="2048" id="chat_rooms" name="chat_rooms" />
+        </td>
+<?php
+    }
+?>
     </tr><tr>
         <td colspan="2">
             <div class="parentClass divCacGroup" id="shard" style="text-align:left;text-indent:25px;background-color:#91C5D4;border-radius:4px;">
@@ -395,22 +396,6 @@ foreach ($viewData->crepos as $crepo) {
         <thead>
             <tr><th colspan="2">Add Host Information for Deployment:</th></tr>
         </thead>
-        <tr>
-            <th style="text-align:right;width:20%;">SubDeployment:<br /><font size="2">(Optional)</font></th>
-            <td style="text-align:left;">
-                <select id="subdeployment" name="subdeployment" multiple="multiple">
-                    <option value="N/A" selected>Select Optional SubDeployment</option>
-<?php
-$subdeployments = preg_split('/\s?,\s?/', SUBDEPLOYMENT_TYPES);
-foreach ($subdeployments as $subdeploy) {
-?>
-                    <option value="<?php echo $subdeploy?>"><?php echo $subdeploy?></option>
-<?php
-}
-?>
-                </select>
-            </td>
-        </tr>
     </table>
     <div class="divCacGroup"></div>
     <div id="dynamic-hosts" class="parentClass">

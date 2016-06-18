@@ -8,12 +8,11 @@
 
 if ($viewData->action == 'diff_configs') {
     $url = "action.php?&deployment={$viewData->deployment}&controller={$viewData->controller}";
-    $url .= "&action={$viewData->action}&subdeployment={$viewData->subdeployment}";
+    $url .= "&action={$viewData->action}";
     $url .= "&fromrev={$viewData->fromrev}&torev={$viewData->torev}";
 } else {
     $url = "action.php?&deployment={$viewData->deployment}&controller={$viewData->controller}";
     $url .= "&action={$viewData->action}&revision={$viewData->revision}";
-    $url .= "&subdeployment={$viewData->subdeployment}";
 }
 ?>
 <html>

@@ -8,9 +8,7 @@
 
 /**
  * Define Deployment for Callback
- * Define Possible SubDeployment (blank = all/NA, staging, production)
  */
 
 define('DEPLOYMENT', '');
-define('SUBDEPLOYMENT', '');
 

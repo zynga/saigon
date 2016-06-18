@@ -56,6 +56,9 @@ class ResourceConfigDataRenderer implements LoggerRendererObject
     {
         $resources = array();
         foreach ($testData->resources as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($resources, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -68,6 +71,9 @@ class ResourceConfigDataRenderer implements LoggerRendererObject
         if (($testData->action == 'modify') || ($testData->action == 'delete')) {
             $oldResources = array();
             foreach ($testData->oldResources as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldResources, "\"$key\" => \"$value\"");
             }
             $msg .= " old_resource_info=[".implode(", ", $oldResources)."]";

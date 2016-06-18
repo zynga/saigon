@@ -42,17 +42,19 @@ if ((isset($viewData->commands)) && (!empty($viewData->commands))) {
 <?php
             } else {
 ?>
-                <a class="deployBtn" title="Modify" href="action.php?controller=command&action=modifyStage&deployment=<?php echo $deployment?>&cmdName=<?php echo $command?>">Modify</a>
                 <a class="deployBtn" title="Copy" href="action.php?controller=command&action=copyStage&deployment=<?php echo $deployment?>&cmdName=<?php echo $command?>">Copy</a>
                 <a class="deployBtn" title="Copy To" href="action.php?controller=command&action=copyToStage&deployment=<?php echo $deployment?>&cmdName=<?php echo $command?>">Copy To</a>
+                <div class="divCacGroup"></div>
+                <a class="deployBtn" title="Modify" href="action.php?controller=command&action=modifyStage&deployment=<?php echo $deployment?>&cmdName=<?php echo $command?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=command&action=delStage&deployment=<?php echo $deployment?>&cmdName=<?php echo $command?>">Delete</a>
 <?php
             }
         } else {
 ?>
-                <a class="deployBtn" title="Modify" href="action.php?controller=command&action=modifyStage&deployment=<?php echo $deployment?>&cmdName=<?php echo $command?>">Modify</a>
                 <a class="deployBtn" title="Copy" href="action.php?controller=command&action=copyStage&deployment=<?php echo $deployment?>&cmdName=<?php echo $command?>">Copy</a>
                 <a class="deployBtn" title="Copy To" href="action.php?controller=command&action=copyToStage&deployment=<?php echo $deployment?>&cmdName=<?php echo $command?>">Copy To</a>
+                <div class="divCacGroup"></div>
+                <a class="deployBtn" title="Modify" href="action.php?controller=command&action=modifyStage&deployment=<?php echo $deployment?>&cmdName=<?php echo $command?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=command&action=delStage&deployment=<?php echo $deployment?>&cmdName=<?php echo $command?>">Delete</a>
 <?php
         }

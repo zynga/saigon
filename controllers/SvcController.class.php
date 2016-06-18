@@ -43,11 +43,9 @@ class SvcController extends Controller {
                 case 'retnstatusinfo':
                     $svcInfo['retain_nonstatus_information'] = $value; break;
                 case 'contacts':
-                    if ($value === false) break;
-                    $svcInfo['contacts'] = implode(",", $value); break;
+                    $svcInfo['contacts'] = $value; break;
                 case 'contactgrps':
-                    if ($value === false) break;
-                    $svcInfo['contact_groups'] = implode(",", $value); break;
+                    $svcInfo['contact_groups'] = $value; break;
                 case 'notifenabled':
                     $svcInfo['notifications_enabled'] = $value; break;
                 case 'notifinterval':
@@ -55,7 +53,7 @@ class SvcController extends Controller {
                 case 'notifperiod':
                     $svcInfo['notification_period'] = $value; break;
                 case 'notifopts':
-                    $svcInfo['notification_options'] = implode(",", $value); break;
+                    $svcInfo['notification_options'] = $value; break;
                 case 'svcgrp':
                     $svcInfo['servicegroups'] = $value; break;
                 case 'checkfreshness':
@@ -87,7 +85,7 @@ class SvcController extends Controller {
             $viewData->svctemplates = RevDeploy::getCommonMergedDeploymentSvcTemplates($deployment, $modrevision);
             $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
             $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->action = $action;
@@ -101,7 +99,7 @@ class SvcController extends Controller {
             $viewData->svctemplates = RevDeploy::getCommonMergedDeploymentSvcTemplates($deployment, $modrevision);
             $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
             $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->action = $action;
@@ -129,7 +127,7 @@ class SvcController extends Controller {
         $viewData->svctemplates = RevDeploy::getCommonMergedDeploymentSvcTemplates($deployment, $modrevision);
         $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
         $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->deployment = $deployment;
@@ -140,7 +138,7 @@ class SvcController extends Controller {
     public function add_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -153,7 +151,7 @@ class SvcController extends Controller {
             $viewData->svctemplates = RevDeploy::getCommonMergedDeploymentSvcTemplates($deployment, $modrevision);
             $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
             $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->svcInfo = $svcInfo;
@@ -181,7 +179,7 @@ class SvcController extends Controller {
         $viewData->svctemplates = RevDeploy::getCommonMergedDeploymentSvcTemplates($deployment, $modrevision);
         $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
         $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->svcInfo = RevDeploy::getDeploymentSvc($deployment, $svc, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
@@ -194,7 +192,7 @@ class SvcController extends Controller {
     public function modify_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -229,7 +227,7 @@ class SvcController extends Controller {
     public function del_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $svc = $this->getParam('svc');
         if ($svc === false) {
@@ -257,7 +255,7 @@ class SvcController extends Controller {
         $viewData->svctemplates = RevDeploy::getCommonMergedDeploymentSvcTemplates($deployment, $modrevision);
         $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
         $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->svcInfo = RevDeploy::getDeploymentSvc($deployment, $svc, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
@@ -276,13 +274,11 @@ class SvcController extends Controller {
             $this->sendError('generic_error', $viewData);
         }
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $commonrevision = RevDeploy::getDeploymentRev($commonRepo);
         $viewData->svctemplates = RevDeploy::getCommonMergedDeploymentSvcTemplates($deployment, $modrevision);
         $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
         $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
-        $viewData->svcInfo = RevDeploy::getDeploymentSvc($commonRepo, $svc, $commonrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
+        $viewData->svcInfo = RevDeploy::getCommonMergedDeploymentSvc($deployment, $svc, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->deployment = $deployment;
@@ -293,7 +289,7 @@ class SvcController extends Controller {
     public function copy_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $svcName = $this->getParam('svcName');
@@ -305,7 +301,7 @@ class SvcController extends Controller {
             $viewData->svctemplates = RevDeploy::getCommonMergedDeploymentSvcTemplates($deployment, $modrevision);
             $viewData->svcgroups = RevDeploy::getCommonMergedDeploymentSvcGroups($deployment, $modrevision);
             $viewData->svcchkcmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->svcInfo = $svcInfo;

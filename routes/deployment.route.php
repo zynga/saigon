@@ -55,6 +55,18 @@ $app->post('/sapi/deployment/:deployment/revisions', function ($deployment) use 
     $currentRev = RevDeploy::getDeploymentRev($deployment);
     RevDeploy::setDeploymentRevs($deployment, $currentRev, $revisionInfo['revision'], $revisionInfo['note']);
     VarnishCache::invalidate($deployment);
+    Chat::messageByDeployment($deployment, "Activated Revision Change Detected. Deployment: $deployment / From Revision: $fromRev / To Revision: $toRev / Change Note: $note", 'green');
+    NagPhean::init(BEANSTALKD_SERVER, BEANSTALKD_TUBE, true);
+    NagPhean::addJob(
+        BEANSTALKD_TUBE,
+        json_encode(
+            array(
+                'deployment' => $deployment, 'type' => 'verify',
+                'revision' => $revisionInfo['revision']
+            )
+        ),
+        2048, 5, 900
+    );
     $apiResponse = new APIViewData(
         0,
         $deployment,
@@ -181,7 +193,6 @@ $app->post('/sapi/deployment/:deployment/host/:type', function ($deployment, $ty
             $hostInfo['srchparam'] = $request->params('srchparam');
             $hostInfo['note'] = $request->params('note');
         }
-        $hostInfo['subdeployment'] = $request->params('subdeployment');
     }
     if ($type == 'dynamic') {
         if ((!isset($hostInfo['location'])) || (empty($hostInfo['location']))) {
@@ -196,7 +207,7 @@ $app->post('/sapi/deployment/:deployment/host/:type', function ($deployment, $ty
             );
             $app->halt(404, $apiResponse->returnJson());
         }
-        $md5 = md5($hostInfo['location'].':'.$hostInfo['srchparam'].':'.$hostInfo['subdeployment']);
+        $md5 = md5($hostInfo['location'].':'.$hostInfo['srchparam']);
         RevDeploy::addDeploymentDynamicHost($deployment, $md5, $hostInfo);
         $apiResponse = new APIViewData(0, $deployment, false);
         $apiResponse->setExtraResponseData('received', $hostInfo);
@@ -254,7 +265,6 @@ $app->delete('/sapi/deployment/:deployment/host/:type', function ($deployment, $
             $hostInfo['srchparam'] = $request->params('srchparam');
             $hostInfo['note'] = $request->params('note');
         }
-        $hostInfo['subdeployment'] = $request->params('subdeployment');
     }
     if ($type == 'dynamic') {
         if ((!isset($hostInfo['location'])) || (empty($hostInfo['location']))) {
@@ -269,7 +279,7 @@ $app->delete('/sapi/deployment/:deployment/host/:type', function ($deployment, $
             );
             $app->halt(404, $apiResponse->returnJson());
         }
-        $md5 = md5($hostInfo['location'].':'.$hostInfo['srchparam'].':'.$hostInfo['subdeployment']);
+        $md5 = md5($hostInfo['location'].':'.$hostInfo['srchparam']);
         $results = RevDeploy::delDeploymentDynamicHost($deployment, $md5, $hostInfo);
         if (!empty($results)) {
             $apiResponse = new APIViewData(0, $deployment, false);

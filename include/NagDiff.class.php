@@ -62,7 +62,6 @@ class NagDiff
      * buildDiffRevisions - build the revisions of the deployment and store them for diffing
      * 
      * @param mixed $deployment    deployment we are building revisions for
-     * @param mixed $subdeployment deployment we are building revisions for
      * @param mixed $fromrev       from revision we are building
      * @param mixed $torev         to revision we are building
      * @param mixed $shardposition shard position we may be using
@@ -71,34 +70,22 @@ class NagDiff
      * @access public
      * @return void
      */
-    public static function buildDiffRevisions($deployment, $subdeployment, $fromrev, $torev, $shardposition)
+    public static function buildDiffRevisions($deployment, $fromrev, $torev, $shardposition)
     {
         self::$_results = array();
         self::$_output = "";
-        NagRedis::init(true);
-        $lockReturn = NagTester::setDeploymentBuildLock($deployment, $subdeployment, $fromrev);
-        if ($lockReturn === false) {
-            self::$_output = "Unable to acquire build lock for Deployment/Revision: $deployment/$fromrev";
-            return false;
-        }
         NagCreate::resetLocalCache();
         /* Get Current Nagios Configs */
         NagCreate::buildDeployment($deployment, $fromrev, true, true, $shardposition);
         $fromconfs = NagCreate::returnDeploymentConfigs($deployment);
         $fromconfs['nrpe.cfg'] = self::_getNRPECfg($deployment, $fromrev);
         $fromconfs['supplemental-nrpe.cfg'] = self::_getSupNRPECfg($deployment, $fromrev);
-        NagTester::deleteDeploymentBuildLock($deployment, $subdeployment, $fromrev);
-        $lockReturn = NagTester::setDeploymentBuildLock($deployment, $subdeployment, $torev);
-        if ($lockReturn === false) {
-            self::$_output = "Unable to acquire build lock for Deployment/Revision: $deployment/$torev";
-            return false;
-        }
         /* Get Future Revision Configs */
         NagCreate::buildDeployment($deployment, $torev, true, true, $shardposition);
         $toconfs = NagCreate::returnDeploymentConfigs($deployment);
         $toconfs['nrpe.cfg'] = self::_getNRPECfg($deployment, $torev);
         $toconfs['supplemental-nrpe.cfg'] = self::_getSupNRPECfg($deployment, $torev);
-        NagTester::deleteDeploymentBuildLock($deployment, $subdeployment, $torev);
+        RevDeploy::deleteConsumerDeploymentLock($deployment, false, 'diff');
         /* Get Plugin Information */
         $fnagplugins = RevDeploy::getDeploymentNagiosPlugins($deployment, $fromrev);
         $tnagplugins = RevDeploy::getDeploymentNagiosPlugins($deployment, $torev);

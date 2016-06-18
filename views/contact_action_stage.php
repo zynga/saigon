@@ -391,13 +391,21 @@ if ($action == 'copy_to_write') {
 <input type="hidden" id="usetemplate" name="usetemplate" value="<?php echo returnData($ctemplate)?>" />
 <input type="hidden" id="hostnotifenabled" name="hostnotifenabled" value="<?php echo returnData($contactHostNotifEn)?>" />
 <input type="hidden" id="hostnotifperiod" name="hostnotifperiod" value="<?php echo returnData($contactHostNotifTime)?>" />
-<input type="hidden" id="hostnotifopts" name="hostnotifopts[]" value="<?php echo returnData($contactHostNotifOpts)?>" />
 <input type="hidden" id="hostnotifcmd" name="hostnotifcmd" value="<?php echo returnData($contactHostNotifCmd)?>" />
 <input type="hidden" id="svcnotifenabled" name="svcnotifenabled" value="<?php echo returnData($contactSvcNotifEn)?>" />
 <input type="hidden" id="svcnotifperiod" name="svcnotifperiod" value="<?php echo returnData($contactSvcNotifTime)?>" />
-<input type="hidden" id="svcnotifopts" name="svcnotifopts[]" value="<?php echo returnData($contactSvcNotifOpts)?>" />
 <input type="hidden" id="svcnotifcmd" name="svcnotifcmd" value="<?php echo returnData($contactSvcNotifCmd)?>" />
 <?php
+    foreach ($contactHostNotifOpts as $hostNotifOpt) {
+?>
+<input type="hidden" name="hostnotifopts[]" value="<?php echo $hostNotifOpt?>" />
+<?php
+    }
+    foreach ($contactSvcNotifOpts as $svcNotifOpt) {
+?>
+<input type="hidden" name="svcnotifopts[]" value="<?php echo $svcNotifOpt?>" />
+<?php
+    }
 }
 ?>
 <div class="divCacGroup"><!-- 5 Pixel Spacer --></div>
@@ -409,13 +417,7 @@ if ($action == 'copy_to_write') {
 <?php
 
 function returnData($payload) {
-    if (is_array($payload)) {
-        if (empty($payload)) {
-            return;
-        } else {
-            return implode(',', $payload);
-        }
-    } else if ((is_numeric($payload)) && ($payload == -1)) {
+    if ((is_numeric($payload)) && ($payload == -1)) {
         return;
     } else if ((is_numeric($payload)) && ($payload == 1)) {
         return 'on';

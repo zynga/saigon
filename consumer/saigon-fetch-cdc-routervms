@@ -11,7 +11,7 @@
  * Fetch Router VMs
  *      Script used to query Cloud.com for the list of RouterVMs in the 
  *      datacenters. It then writes it into the Redis store, that way we
- *      can call into Saigon and receiving the results immediately.
+ *      can call into Saigon and receive the results immediately.
  */
 
 /* Requires for includes of functions and definitions */
@@ -21,7 +21,7 @@ require_once BASE_PATH.'/lib/classLoader.class.php';
 Saigon_ClassLoader::register();
 /* Load up Datacenter Info */
 $datacenters = parse_ini_file(BASE_PATH.'/conf/cdc_creds.ini', true);
-$results = array();
+$zoneData = array();
 $zones = array();
 foreach ($datacenters as $datacenter => $dccreds) {
     $cdcrvm = new CDC_RVM($dccreds);
@@ -34,14 +34,9 @@ foreach ($datacenters as $datacenter => $dccreds) {
         if (!in_array($zone[0], $zones)) {
             array_push($zones, $zone[0]);
         }
-        $results[$zone[0]][$dataObj->name]['parent'] = $dataObj->hostname;
-        $results[$zone[0]][$dataObj->name]['ipaddress'] = $dataObj->guestipaddress;
+        $zoneData[$zone[0]][$dataObj->name]['parent'] = $dataObj->hostname;
+        $zoneData[$zone[0]][$dataObj->name]['ipaddress'] = $dataObj->guestipaddress;
     }
 }
-CDC_DS::init();
-foreach ($results as $zone => $zoneinfo) {
-    print $zone."\n";
-    CDC_DS::writeRouterInfo($zone, json_encode($zoneinfo));
-}
-CDC_DS::writeRouterZones($zones);
-
+RevDeploy::writeCDCRouterZones($zoneData);
+print "Successfully wrote CDC Zone Information for: " . implode(', ', $zones) . "\n";

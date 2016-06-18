@@ -13,14 +13,14 @@ $cfg = $viewData->cgicfg;
 $contacts = array_keys($viewData->contacts);
 array_unshift($contacts, "*");
 
-$authsysinfo = isset($cfg['authorized_for_system_information'])?explode(',', $cfg['authorized_for_system_information']):array();
-$authconfinfo = isset($cfg['authorized_for_configuration_information'])?explode(',', $cfg['authorized_for_configuration_information']):array();
-$authsyscmds = isset($cfg['authorized_for_system_commands'])?explode(',', $cfg['authorized_for_system_commands']):array();
-$authallsvcs = isset($cfg['authorized_for_all_services'])?explode(',', $cfg['authorized_for_all_services']):array();
-$authallhosts = isset($cfg['authorized_for_all_hosts'])?explode(',', $cfg['authorized_for_all_hosts']):array();
-$authallsvccmds = isset($cfg['authorized_for_all_service_commands'])?explode(',', $cfg['authorized_for_all_service_commands']):array();
-$authallhostcmds = isset($cfg['authorized_for_all_host_commands'])?explode(',', $cfg['authorized_for_all_host_commands']):array();
-$authreadonly = isset($cfg['authorized_for_read_only'])?explode(',', $cfg['authorized_for_read_only']):array();
+$authsysinfo = isset($cfg['authorized_for_system_information'])?$cfg['authorized_for_system_information']:array();
+$authconfinfo = isset($cfg['authorized_for_configuration_information'])?$cfg['authorized_for_configuration_information']:array();
+$authsyscmds = isset($cfg['authorized_for_system_commands'])?$cfg['authorized_for_system_commands']:array();
+$authallsvcs = isset($cfg['authorized_for_all_services'])?$cfg['authorized_for_all_services']:array();
+$authallhosts = isset($cfg['authorized_for_all_hosts'])?$cfg['authorized_for_all_hosts']:array();
+$authallsvccmds = isset($cfg['authorized_for_all_service_commands'])?$cfg['authorized_for_all_service_commands']:array();
+$authallhostcmds = isset($cfg['authorized_for_all_host_commands'])?$cfg['authorized_for_all_host_commands']:array();
+$authreadonly = isset($cfg['authorized_for_read_only'])?$cfg['authorized_for_read_only']:array();
 
 $splunkurl = isset($cfg['splunk_url'])?$cfg['splunk_url']:'http://127.0.0.1:8000/';
 if (($value = base64_decode($splunkurl, true)) !== false) {

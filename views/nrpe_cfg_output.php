@@ -37,6 +37,7 @@ require HTML_HEADER;
 </table>
 <div class="divCacGroup"></div>
 <a href="action.php?controller=nrpecfg&action=stage&deployment=<?php echo $viewData->deployment?>" class="deployBtn">NRPE Configuration</a>
+<div class="divCacGroup"></div>
 </div>
 
 <script type="text/javascript">

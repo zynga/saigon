@@ -30,8 +30,7 @@ class NRPECreate
             $filecontents .= "$key=$value\n";
         }
         $filecontents .= "\n";
-        $cmds = preg_split('/,/', $nrpeInfo['cmds']);
-        $nrpecmdlines = self::buildNRPECmdLines($deployment, $revision, $cmds);
+        $nrpecmdlines = self::buildNRPECmdLines($deployment, $revision, $nrpeInfo['cmds']);
         $filecontents .= implode("\n", $nrpecmdlines);
         return $filecontents;
     }
@@ -48,8 +47,7 @@ class NRPECreate
      */
     public static function buildSupNRPEFile($deployment, $revision, $supnrpeInfo)
     {
-        $cmds = preg_split('/,/', $supnrpeInfo['cmds']);
-        $nrpecmdlines = self::buildNRPECmdLines($deployment, $revision, $cmds);
+        $nrpecmdlines = self::buildNRPECmdLines($deployment, $revision, $supnrpeInfo['cmds']);
         $filecontents = self::FILEHEADER;
         $filecontents .= implode("\n", $nrpecmdlines);
         return $filecontents;

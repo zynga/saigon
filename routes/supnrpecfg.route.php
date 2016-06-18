@@ -67,10 +67,6 @@ $app->post('/sapi/supnrpecfg/:deployment', function ($deployment) use ($app) {
         $apiResponse = new APIViewData(1, $deployment, "Unable to detect location parameter (unix path including filename)");
         $app->halt(404, $apiResponse->returnJson());
     }
-    // Param manipulation depending on what is detected
-    if (is_array($supNRPECfgInfo['cmds'])) {
-        $supNRPECfgInfo['cmds'] = implode(',', $supNRPECfgInfo['cmds']);
-    }
     check_revision_status($deployment);
     $deployRev = RevDeploy::getDeploymentNextRev($deployment);
     if (RevDeploy::existsDeploymentSupNRPECfg($deployment, $deployRev) === true) {

@@ -51,7 +51,7 @@ class HostGrpController extends Controller {
     public function add_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('host_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -93,7 +93,7 @@ class HostGrpController extends Controller {
     public function modify_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('host_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -129,7 +129,7 @@ class HostGrpController extends Controller {
     public function del_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('host_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $hostGrpName = $this->getParam('hostName');
         if ($hostGrpName === false) {
@@ -169,9 +169,8 @@ class HostGrpController extends Controller {
             $viewData->error = 'Unable to detect host specified in post params';
             $this->sendError('generic_error', $viewData);
         }
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $commonrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $viewData->hostGrpInfo = RevDeploy::getDeploymentHostGroup($commonRepo, $hostGrpName, $commonrevision);
+        $modrevision = RevDeploy::getDeploymentNextRev($deployment);
+        $viewData->hostGrpInfo = RevDeploy::getCommonMergedDeploymentHostGroup($deployment, $hostGrpName, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->action = 'copy_write';
         $this->sendResponse('host_group_action_stage', $viewData);
@@ -180,7 +179,7 @@ class HostGrpController extends Controller {
     public function copy_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('host_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $hostGrpName = $this->getParam('hostName');

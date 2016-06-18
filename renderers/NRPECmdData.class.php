@@ -62,6 +62,9 @@ class NRPECmdDataRenderer implements LoggerRendererObject
             if ($key == 'cmd_line') {
                 $value = base64_decode($value);
             }
+            elseif (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($nrpecmdInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -74,6 +77,9 @@ class NRPECmdDataRenderer implements LoggerRendererObject
             foreach ($testData->oldNRPECmdInfo as $key => $value) {
                 if ($key == 'cmd_line') {
                     $value = base64_decode($value);
+                }
+                elseif (is_array($value)) {
+                    $value = implode(",", $value);
                 }
                 array_push($oldNRPECmdInfo, "\"$key\" => \"$value\"");
             }

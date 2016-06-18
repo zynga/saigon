@@ -24,13 +24,15 @@ class NagMisc {
      */
     public static function getIP() {
         if (!isset($_SERVER) || !is_array($_SERVER))
-            $ip = '';
+            $ip = '127.0.0.1';
         elseif (array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER)) //to check ip is passed from proxy
             $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
         elseif (array_key_exists('HTTP_CLIENT_IP', $_SERVER)) //check ip from share internet
             $ip = $_SERVER['HTTP_CLIENT_IP'];
         elseif (array_key_exists('REMOTE_ADDR', $_SERVER))
             $ip = $_SERVER['REMOTE_ADDR'];
+        elseif (CONSUMER === true)
+            $ip = '127.0.0.1';
         return $ip;
     }
 

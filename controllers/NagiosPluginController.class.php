@@ -69,7 +69,7 @@ class NagiosPluginController extends Controller {
     public function add_plugin() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nagios_plugin_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $pluginInfo = $this->fetchPluginInfo($deployment, 'add_plugin', 'nagios_plugin_action_stage', $modrevision);
@@ -93,7 +93,7 @@ class NagiosPluginController extends Controller {
     public function modify_plugin() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nagios_plugin_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $pluginInfo = $this->fetchPluginInfo($deployment, 'modify_plugin', 'nagios_plugin_action_stage', $modrevision);
@@ -117,7 +117,7 @@ class NagiosPluginController extends Controller {
     public function delete_plugin() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nagios_plugin_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $plugin = $this->getPlugin('nagios_plugin_error');
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -142,10 +142,9 @@ class NagiosPluginController extends Controller {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nagios_plugin_error');
         $plugin = $this->getPlugin('nagios_plugin_error');
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $modrevision = RevDeploy::getDeploymentRev($commonRepo);
+        $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->deployment = $deployment;
-        $viewData->plugin = RevDeploy::getDeploymentNagiosPlugin($commonRepo, $plugin, $modrevision);
+        $viewData->plugin = RevDeploy::getCommonMergedDeploymentNagiosPlugin($deployment, $plugin, $modrevision);
         $viewData->action = 'view';
         $this->sendResponse('nagios_plugin_view_stage', $viewData);
     }
@@ -168,10 +167,9 @@ class NagiosPluginController extends Controller {
         $deployments = array();
         array_push($deployments, $deployment);
         $plugin = $this->getPlugin('nagios_plugin_error');
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $modrevision = RevDeploy::getDeploymentRev($commonRepo);
+        $modrevision = RevDeploy::getDeploymentRev($deployment);
         $viewData->deployment = $deployment;
-        $viewData->plugin = RevDeploy::getDeploymentNagiosPlugin($commonRepo, $plugin, $modrevision);
+        $viewData->plugin = RevDeploy::getCommonMergedDeploymentNagiosPlugin($deployment, $plugin, $modrevision);
         $viewData->availdeployments = $deployments;
         $viewData->ccs = true;
         $viewData->action = 'copy_to_write';
@@ -188,7 +186,7 @@ class NagiosPluginController extends Controller {
             $viewData->error = 'Unable to detect deployment to copy command to';
             $this->sendResponse('generic_error', $viewData);
         }
-        $this->checkGroupAuth($todeployment);
+        $this->checkGroupAuthByDeployment($todeployment);
         $this->checkDeploymentRevStatus($todeployment);
         $tdRev = RevDeploy::getDeploymentNextRev($todeployment);
         $deployRev = RevDeploy::getDeploymentNextRev($deployment);

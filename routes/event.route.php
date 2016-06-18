@@ -49,13 +49,8 @@ $app->map('/sapi/event/nsca/:type/:deployment', function ($type, $deployment) us
     }
     // Broken off, so we can perform proper if / else against server var...
     if ((!isset($eventInfo['server'])) || (empty($eventInfo['server']))) {
-        if ($deployment == 'zops') {
-            $nagiosServer = 'netops-nagios-zops-01.zc2.zynga.com';
-        }
-        else {
-            $apiResponse = new APIViewData(1, $deployment, "Unable to detect server parameter (nagios server to submit results too)");
-            $app->halt(404, $apiResponse->returnJson());
-        }
+        $apiResponse = new APIViewData(1, $deployment, "Unable to detect server parameter (nagios server to submit results too)");
+        $app->halt(404, $apiResponse->returnJson());
     }
     else {
         $nagiosServer = $eventInfo['server'];
@@ -81,7 +76,12 @@ $app->map('/sapi/event/nsca/:type/:deployment', function ($type, $deployment) us
     else {
         $nscabin = '/usr/sbin/send_nsca';
         if (file_exists($nscabin)) {
-            shell_exec("echo $msg | $nscabin -H $nagiosServer -d , -c /etc/nagios/send_nsca.cfg");
+            if (strtolower(DIST_TYPE) == 'debian') {
+                shell_exec("echo $msg | $nscabin -H $nagiosServer -d , -c /etc/send_nsca.cfg");
+            }
+            else {
+                shell_exec("echo $msg | $nscabin -H $nagiosServer -d , -c /etc/nagios/send_nsca.cfg");
+            }
             $apiResponse = new APIViewData(0, $deployment, $msg);
             $apiResponse->setExtraResponseData('eventsubmission', $eventSubmission);
             $apiResponse->printJson();

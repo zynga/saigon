@@ -70,7 +70,7 @@ class NRPECmdController extends Controller {
     public function add_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nrpe_cmd_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -116,7 +116,7 @@ class NRPECmdController extends Controller {
     public function modify_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nrpe_cmd_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -157,7 +157,7 @@ class NRPECmdController extends Controller {
     public function del_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nrpe_cmd_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $nrpecmd = $this->getParam('nrpecmd');
@@ -205,9 +205,8 @@ class NRPECmdController extends Controller {
             $this->sendError('generic_error', $viewData);
         }
         $viewData->command = $nrpecmd;
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $commonrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $nrpecmdInfo = RevDeploy::getDeploymentNRPECmd($commonRepo, $nrpecmd, $commonrevision);
+        $modrevision = RevDeploy::getDeploymentNextRev($deployment);
+        $nrpecmdInfo = RevDeploy::getCommonMergedDeploymentNRPECmd($deployment, $nrpecmd, $modrevision);
         if (empty($nrpecmdInfo)) {
             $viewData->header = $this->getErrorHeader('nrpe_cmd_error');
             $viewData->error = 'Unable to fetch command information for '.$nrpecmd.' from data store';
@@ -221,7 +220,7 @@ class NRPECmdController extends Controller {
     public function copy_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('nrpe_cmd_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -278,7 +277,7 @@ class NRPECmdController extends Controller {
             $viewData->action = 'copy_to_write';
             $this->sendResponse('command_action_stage', $viewData);
         }
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($todeployment);
         $deployRev = RevDeploy::getDeploymentNextRev($deployment);
         $tdRev = RevDeploy::getDeploymentNextRev($todeployment);
