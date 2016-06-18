@@ -2,8 +2,8 @@
 
 $credentials = array(
     "useast1" => array(
-        "secret" => "WNUXq1ez1qFpzLAChjjOfH2oXZWZCmJod/3w/ehM",
-        "key" => "AKIAJAJMXHWTZMGP3B6Q",
+        "secret" => "",
+        "key" => "",
         "region" => "us-east-1",
     ),
 );
