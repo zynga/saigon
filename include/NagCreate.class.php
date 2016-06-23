@@ -137,7 +137,15 @@ class NagCreate {
             $response = RevDeploy::getDeploymentData($deployment, $revision, true);
             $responseObj = json_decode($response);
             $helper = new NagHelpers(true);
-            $helper->setAliasTemplate($responseObj->miscsettings->aliastemplate);
+            if (
+                (isset($responseObj->miscsettings->aliastemplate)) &&
+                (!empty($responseObj->miscsettings->aliastemplate))
+            ) {
+                $helper->setAliasTemplate($responseObj->miscsettings->aliastemplate);
+            }
+            else {
+                $helper->setAliasTemplate('host-dc');
+            }
             $helper->setGlobalNegate($responseObj->miscsettings->deploynegate);
             if ( $shardposition !== false) {
                 $deploymentInfo = RevDeploy::getDeploymentInfo($deployment);
@@ -303,7 +311,7 @@ class NagCreate {
                                 );
                             }
                         }
-                        if ((isset($ntArray['contact_groups'])) && (!empty($ntArray['contact_groups']))) {
+                        if ((isset($ntArray['contactgroups'])) && (!empty($ntArray['contactgroups']))) {
                             if ((!isset($serviceData[$ntName][$service]['contact_groups'])) || (empty($serviceData[$ntName][$service]['contact_groups']))) {
                                 $serviceData[$ntName][$service]['contact_groups'] = array();
                             }
@@ -312,7 +320,7 @@ class NagCreate {
                                     $serviceData[$ntName][$service]['contact_groups'] = array($serviceData[$ntName][$service]['contact_groups']);
                                 }
                             }
-                            foreach($ntArray['contact_groups'] as $contactgroup) {
+                            foreach($ntArray['contactgroups'] as $contactgroup) {
                                 array_push(
                                     $serviceData[$ntName][$service]['contact_groups'],
                                     $contactgroup
@@ -508,7 +516,7 @@ class NagCreate {
                             );
                         }
                     }
-                    if ((isset($ntArray['contact_groups'])) && (!empty($ntArray['contact_groups']))) {
+                    if ((isset($ntArray['contactgroups'])) && (!empty($ntArray['contactgroups']))) {
                         if ((!isset($serviceData[$ntName][$service]['contact_groups'])) || (empty($serviceData[$ntName][$service]['contact_groups']))) {
                             $serviceData[$ntName][$service]['contact_groups'] = array();
                         }
@@ -517,7 +525,7 @@ class NagCreate {
                                 $serviceData[$ntName][$service]['contact_groups'] = array($serviceData[$ntName][$service]['contact_groups']);
                             }
                         }
-                        foreach($ntArray['contact_groups'] as $contactgroup) {
+                        foreach($ntArray['contactgroups'] as $contactgroup) {
                             array_push(
                                 $serviceData[$ntName][$service]['contact_groups'], $contactgroup
                             );
@@ -854,7 +862,11 @@ class NagCreate {
                     continue;
                 }
                 elseif (!is_array($value)) {
-                    if ($value == null) {
+                    $i_val = (integer) $value;
+                    if (($i_val != 0 ) && ($value == null)) {
+                        continue;
+                    }
+                    elseif (($i_val == 0) && (strlen($value) == 0)) {
                         continue;
                     }
                 }
@@ -891,7 +903,11 @@ class NagCreate {
                     continue;
                 }
                 elseif (!is_array($value)) {
-                    if ($value == null) {
+                    $i_val = (integer) $value;
+                    if (($i_val != 0 ) && ($value == null)) {
+                        continue;
+                    }
+                    elseif (($i_val == 0) && (strlen($value) == 0)) {
                         continue;
                     }
                 }
@@ -923,7 +939,11 @@ class NagCreate {
                     continue;
                 }
                 elseif (!is_array($value)) {
-                    if ($value == null) {
+                    $i_val = (integer) $value;
+                    if (($i_val != 0 ) && ($value == null)) {
+                        continue;
+                    }
+                    elseif (($i_val == 0) && (strlen($value) == 0)) {
                         continue;
                     }
                 }
@@ -954,7 +974,11 @@ class NagCreate {
                     continue;
                 }
                 elseif (!is_array($value)) {
-                    if ($value == null) {
+                    $i_val = (integer) $value;
+                    if (($i_val != 0 ) && ($value == null)) {
+                        continue;
+                    }
+                    elseif (($i_val == 0) && (strlen($value) == 0)) {
                         continue;
                     }
                 }
@@ -985,7 +1009,11 @@ class NagCreate {
                     continue;
                 }
                 elseif (!is_array($value)) {
-                    if ($value == null) {
+                    $i_val = (integer) $value;
+                    if (($i_val != 0 ) && ($value == null)) {
+                        continue;
+                    }
+                    elseif (($i_val == 0) && (strlen($value) == 0)) {
                         continue;
                     }
                 }
@@ -1016,7 +1044,11 @@ class NagCreate {
                     continue;
                 }
                 elseif (!is_array($value)) {
-                    if ($value == null) {
+                    $i_val = (integer) $value;
+                    if (($i_val != 0 ) && ($value == null)) {
+                        continue;
+                    }
+                    elseif (($i_val == 0) && (strlen($value) == 0)) {
                         continue;
                     }
                 }
@@ -1068,7 +1100,11 @@ class NagCreate {
                     continue;
                 }
                 elseif (!is_array($value)) {
-                    if ($value == null) {
+                    $i_val = (integer) $value;
+                    if (($i_val != 0 ) && ($value == null)) {
+                        continue;
+                    }
+                    elseif (($i_val == 0) && (strlen($value) == 0)) {
                         continue;
                     }
                 }
@@ -1179,7 +1215,11 @@ class NagCreate {
                         continue;
                     }
                     elseif (!is_array($value)) {
-                        if (strlen($value) == 0) {
+                        $i_val = (integer) $value;
+                        if (($i_val != 0 ) && ($value == null)) {
+                            continue;
+                        }
+                        elseif (($i_val == 0) && (strlen($value) == 0)) {
                             continue;
                         }
                     }
@@ -1220,6 +1260,9 @@ class NagCreate {
                     if (($i_val != 0 ) && ($value == null)) {
                         continue;
                     }
+                    elseif (($i_val == 0) && (strlen($value) == 0)) {
+                        continue;
+                    }
                 }
                 if (preg_match("/^_saigon_/", $key)) continue;
                 if ((is_array($value)) && (!empty($value))) {
@@ -1251,6 +1294,9 @@ class NagCreate {
                 elseif (!is_array($value)) {
                     $i_val = (integer) $value;
                     if (($i_val != 0 ) && ($value == null)) {
+                        continue;
+                    }
+                    elseif (($i_val == 0) && (strlen($value) == 0)) {
                         continue;
                     }
                 }
@@ -1516,6 +1562,9 @@ class NagCreate {
                 elseif (!is_array($value)) {
                     $i_val = (integer) $value;
                     if (($i_val != 0 ) && ($value == null)) {
+                        continue;
+                    }
+                    elseif (($i_val == 0) && (strlen($value) == 0)) {
                         continue;
                     }
                 }

@@ -201,7 +201,8 @@ class RevDeploy {
                 'name' => 'common',
                 'deploystyle' => 'commonrepo',
                 'desc' => 'Global Configuration Information',
-                'authgroups' => 'Overridden by Conf on Server'
+                'authgroups' => 'Overridden by Conf on Server',
+                'aliastemplate' => 'host-dc'
             );
             self::createDeployment('common', $commonInfo, array(), array());
             $timeperiodInfo = array();

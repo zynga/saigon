@@ -2626,7 +2626,8 @@ class SaigonES implements DataStoreAPI
         else $params['id'] = $lockType.'-lock';
         if (($exists = $this->existsConsumerDeploymentLock($deployment, $revision, $lockType)) === false) {
             $params['body']['active'] = true;
-            $parals['ttl'] = $ttl;
+            $params['ttl'] = $ttl;
+            $this->es->index($params);
             return true;
         }
         return false;

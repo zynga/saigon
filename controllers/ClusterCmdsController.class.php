@@ -374,7 +374,7 @@ class ClusterCmdsController extends Controller {
         $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
-        $this->sendResponse('cluster_cmds_action_stage', $viewData);
+        $this->sendResponse('cluster_cmds_action_quorum_stage', $viewData);
     }
 
     public function copy_write() {
@@ -433,8 +433,9 @@ class ClusterCmdsController extends Controller {
         $errstr     = curl_error($ch);
         curl_close($ch);
         if ($errno) {
+            $viewData->header = $this->getErrorHeader('cluster_cmds_error');
             $viewData->error = "Unable to process request: $errno : $errstr";
-            $this->sendResponse('cluster_cmds_error', $viewData);
+            $this->sendError('generic_error', $viewData);
         }
         $viewData->response = $response;
         $this->sendResponse('cluster_cmds_matches', $viewData);

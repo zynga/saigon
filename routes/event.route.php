@@ -53,7 +53,12 @@ $app->map('/sapi/event/nsca/:type/:deployment', function ($type, $deployment) us
         $app->halt(404, $apiResponse->returnJson());
     }
     else {
-        $nagiosServer = $eventInfo['server'];
+        if (is_array($eventInfo['server'])) {
+            $nagiosServer = implode(",", $eventInfo['server']);
+        }
+        else {
+            $nagiosServer = $eventInfo['server'];
+        }
     }
     $msg = $eventInfo['host'] . ",";
     if ($type == 'service') {
@@ -76,11 +81,24 @@ $app->map('/sapi/event/nsca/:type/:deployment', function ($type, $deployment) us
     else {
         $nscabin = '/usr/sbin/send_nsca';
         if (file_exists($nscabin)) {
-            if (strtolower(DIST_TYPE) == 'debian') {
-                shell_exec("echo $msg | $nscabin -H $nagiosServer -d , -c /etc/send_nsca.cfg");
+            if (preg_match('/,/', $nagiosServer)) {
+                $nagiosServers = explode(",", $nagiosServer);
+                foreach ( $nagiosServers as $server ) {
+                    if (strtolower(DIST_TYPE) == 'debian') {
+                        shell_exec("echo $msg | $nscabin -H $server -d , -c /etc/send_nsca.cfg");
+                    }
+                    else {
+                       shell_exec("echo $msg | $nscabin -H $server -d , -c /etc/nagios/send_nsca.cfg");
+                    }
+                }
             }
             else {
-                shell_exec("echo $msg | $nscabin -H $nagiosServer -d , -c /etc/nagios/send_nsca.cfg");
+                if (strtolower(DIST_TYPE) == 'debian') {
+                    shell_exec("echo $msg | $nscabin -H $nagiosServer -d , -c /etc/send_nsca.cfg");
+                }
+                else {
+                   shell_exec("echo $msg | $nscabin -H $nagiosServer -d , -c /etc/nagios/send_nsca.cfg");
+                }
             }
             $apiResponse = new APIViewData(0, $deployment, $msg);
             $apiResponse->setExtraResponseData('eventsubmission', $eventSubmission);

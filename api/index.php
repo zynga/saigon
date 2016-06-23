@@ -32,10 +32,16 @@ $app = new \Slim\Slim();
 function check_auth($app, $deployment) {
     $amodule = AUTH_MODULE;
     $authmodule = new $amodule();
-    $return = $authmodule->checkAuth($deployment);
+    $return = $authmodule->checkAuthByDeployment($deployment);
     if ($return === false) {
-        $apiResponse = new APIViewData(1, $deployment, "Invalid Login or Invalid Credentials Supplied");
-        $app->halt(401, $apiResponse->returnJson());
+        $supermen = $authmodule->checkAuthByGroup(SUPERMEN);
+        if ($supermen === false) {
+            $apiResponse = new APIViewData(1, $deployment, "Invalid Login or Invalid Credentials Supplied");
+            $app->halt(401, $apiResponse->returnJson());
+        }
+        else {
+            return true;
+        }
     }
     return true;
 }
@@ -269,6 +275,9 @@ $app->hook('slim.before.router', function () use($app)
         case "/sapi/timeperiods":
         case "/sapi/timeperiod":
             require_once(BASE_PATH . "/routes/timeperiod.route.php"); break;
+        case "/sapi/clusteredcommand":
+        case "/sapi/clusteredcommands":
+            require_once(BASE_PATH . "/routes/clusteredcommands.route.php"); break;
         case "/api/getMGCfg":
         case "/api/getNagiosCfg":
         case "/api/getNRPECfg":
