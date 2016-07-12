@@ -10,9 +10,19 @@
  * Host Module Information
  **/
 
-/* Define Host API Interface Modules */
-define('DEPLOYMENT_MODULES', 'PCMDBDeployments,PCMDBNodepools,PCMDBRegions,PCMDBProductAreas,PCMDBServiceMappings');
-define('INPUT_MODULES', 'PCMDBGlob');
+/**
+ * Define Host API Interface Modules
+ *
+ * Available DEPLOYMENT_MODULES: CDCRouterVMs, CMDBDatacenters, CMDBDeployments, CMDBParentChild,
+ *                               CMDBRSDeployments, CMDBRSServerArrays, PCMDBDeployments,
+ *                               PCMDBNodepools, PCMDBProductAreas, PCMDBRegions,
+ *                               PCMDBServiceMappings, RightScale, ZSBDeployments
+ *
+ * Available INPUT_MODULES: CMDBDBAGlobs, CMDBDNGlobs, CMDBGlobs, ConsulGlob, PCMDBGlob, ZSBGlobs
+ *
+ **/
+define('DEPLOYMENT_MODULES', '');
+define('INPUT_MODULES', '');
 
 /* CMDB Auth Info / Library Requirements */
 define('CMDB_USER', 'user');
