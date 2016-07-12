@@ -28,3 +28,5 @@ define('RS_BASE_APIURL', "https://my.rightscale.com/api");
 define('RS_REGION_MAP', "shortname:api_account_number:api_account_key");
 /* Pinterest CMDB Info */
 define('PCMDB_URL', 'https://some.domain.com/');
+/* Consul URL Info */
+define('CONSUL_URL', 'http://localhost:port');
