@@ -53,6 +53,8 @@ define('CLUSTER_COMMANDS', true);
 define('CLUSTER_COMMANDS_URL', 'http://some.domain.com/lapi/rawquery');
 /* Code flag for consumer tripwires */
 define('CONSUMER', false);
+/* Remove hosts from configs which aren't classified by the node matrix mapper*/
+define('SKIP_UNCLASSIFED_HOSTS', true);
 /* Import Datastore Module Info */
 require_once BASE_PATH.'/conf/datastoremodules.inc.php';
 /* Import Host Module Info */

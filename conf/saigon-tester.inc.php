@@ -57,6 +57,8 @@ define('PIDFILE', BASE_PATH.'/var/run/saigon-tester.pid');
 define('SHARDING', false);
 /* Code flag for consumer tripwires */
 define('CONSUMER', true);
+/* Remove hosts from configs which aren't classified by the node matrix mapper*/
+define('SKIP_UNCLASSIFED_HOSTS', true);
 /* Import Datastore Module Info */
 require_once BASE_PATH.'/conf/datastoremodules.inc.php';
 /* Import Host Module Auth Info */

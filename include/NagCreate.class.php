@@ -677,6 +677,14 @@ class NagCreate {
                 }
             }
         }
+        elseif (SKIP_UNCLASSIFIED_HOSTS === true) {
+            $allHosts = array_keys($hostCache);
+            $classifiedHosts = array_unique($classifiedHosts);
+            $unclassifiedHosts = array_diff($allHosts, $classifiedHosts);
+            foreach ($unclassifiedHosts as $unclassifiedHost) {
+                delete($hostCache[$unclassifiedHost]);
+            }
+        }
         if (!empty($hostCache)) self::createHostFile($hostCache);
         if (!empty($serviceData)) self::createServiceFile($serviceData);
         if (!empty($serviceDependencyCache)) self::createServiceDependencyFile($serviceDependencyCache);

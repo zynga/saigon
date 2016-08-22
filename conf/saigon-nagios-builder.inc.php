@@ -48,6 +48,8 @@ require_once BASE_PATH.'/conf/sharding.inc.php';
 define('PID_FILE', '/var/run/saigon-consumer.pid');
 /* Code flag for consumer tripwires */
 define('CONSUMER', true);
+/* Remove hosts from configs which aren't classified by the node matrix mapper*/
+define('SKIP_UNCLASSIFED_HOSTS', true);
 /* Import Host Module Auth Info */
 require_once BASE_PATH.'/conf/hostmodules.inc.php';
 /* Import Third Party Module Info */

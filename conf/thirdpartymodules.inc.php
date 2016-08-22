@@ -11,7 +11,7 @@
  **/
 
 /* Display / Activate Message Integration */
-define('CHAT_INTEGRATION', true);
+define('CHAT_INTEGRATION', false);
 define('CHAT_MODULE', 'Slack'); // HipChat or Slack
 
 // HipChat Token
