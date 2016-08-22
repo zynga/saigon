@@ -43,18 +43,20 @@ if ((isset($viewData->plugins)) && (!empty($viewData->plugins))) {
 <?php
             } else {
 ?>
+                <a class="deployBtn" title="View" href="action.php?controller=nagiosplugin&action=show_plugin&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">View</a>
+                <a class="deployBtn" title="Copy To" href="action.php?controller=nagiosplugin&action=copy_to_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">Copy To</a>
+                <div class="divCacGroup"></div>
                 <a class="deployBtn" title="Modify" href="action.php?controller=nagiosplugin&action=modify_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=nagiosplugin&action=delete_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">Delete</a>
-                <a class="deployBtn" title="Copy To" href="action.php?controller=nagiosplugin&action=copy_to_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">Copy To</a>
-                <a class="deployBtn" title="View" href="action.php?controller=nagiosplugin&action=show_plugin&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">View</a>
 <?php
             }
         } else {
 ?>
+                <a class="deployBtn" title="View" href="action.php?controller=nagiosplugin&action=show_plugin&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">View</a>
+                <a class="deployBtn" title="Copy To" href="action.php?controller=nagiosplugin&action=copy_to_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">Copy To</a>
+                <div class="divCacGroup"></div>
                 <a class="deployBtn" title="Modify" href="action.php?controller=nagiosplugin&action=modify_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=nagiosplugin&action=delete_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">Delete</a>
-                <a class="deployBtn" title="Copy To" href="action.php?controller=nagiosplugin&action=copy_to_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">Copy To</a>
-                <a class="deployBtn" title="View" href="action.php?controller=nagiosplugin&action=show_plugin&deployment=<?php echo $deployment?>&plugin=<?php echo $nagiosplugin?>">View</a>
 <?php
         }
 ?>

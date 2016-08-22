@@ -18,65 +18,28 @@ if (!defined('BASE_PATH')) {
 require_once BASE_PATH.'/conf/version.inc.php';
 /* Import Mode Info */
 require_once BASE_PATH.'/conf/role.inc.php';
-/* Global Information */
-if (strtolower(MODE) == 'prod') {
-    /* Redis Cluster Information */
-    define('REDIS_CLUSTER', '127.0.0.1:6379');
-    define('REDIS_PREFIX', null);
-    /* Saigon request url for API access */
-    define('SAIGONAPI_URL', 'https://127.0.0.1/api');
-    /* Audit trail log file for log4php library */
-    define('AUDIT_LOG', BASE_PATH.'/audit/saigon-access.log');
-    /* Debug flag */
-    define('DEBUG', false);
-    define('BEANSTALKD_SERVER', '127.0.0.1');
-    define('BEANSTALKD_TUBE', 'saigon-build');
-    define('GFS_ACCESS', 'group1,group2');
-    define('GFS_PLUGLOC', '/some/path/');
-    define('BUILD_NRPERPM', true);
-    define('API_EVENT_SUBMISSION', 'inline');
-    define('VARNISH_CACHE_ENABLED', false);
-    define('VARNISH_CACHE_HOSTS', '127.0.0.1');
-    define('VARNISH_CACHE_HOSTNAME', 'localhost');
-} else if (strtolower(MODE) == 'secure') {
-    /* Redis Cluster Information */
-    define('REDIS_CLUSTER', '127.0.0.1:6379');
-    define('REDIS_PREFIX', null);
-    /* Saigon request url for API access */
-    define('SAIGONAPI_URL', 'https://127.0.0.1/api');
-    /* Audit trail log file for log4php library */
-    define('AUDIT_LOG', BASE_PATH.'/audit/saigon-access.log');
-    /* Debug flag */
-    define('DEBUG', false);
-    define('BEANSTALKD_SERVER', '127.0.0.1');
-    define('BEANSTALKD_TUBE', 'saigon-build');
-    define('GFS_ACCESS', 'group1,group2');
-    define('GFS_PLUGLOC', '/some/path/');
-    define('BUILD_NRPERPM', true);
-    define('API_EVENT_SUBMISSION', 'inline');
-    define('VARNISH_CACHE_ENABLED', false);
-    define('VARNISH_CACHE_HOSTS', '127.0.0.1');
-    define('VARNISH_CACHE_HOSTNAME', 'localhost');
-} else {
-    /* Redis Cluster Information */
-    define('REDIS_CLUSTER', '127.0.0.1:6379');
-    define('REDIS_PREFIX', null);
-    /* Saigon request url for API access */
-    define('SAIGONAPI_URL', 'https://127.0.0.1/api');
-    /* Audit trail log file for log4php library */
-    define('AUDIT_LOG', '/tmp/saigon-access.log');
-    /* Debug flag */
-    define('DEBUG', true);
-    define('BEANSTALKD_SERVER', '127.0.0.1');
-    define('BEANSTALKD_TUBE', 'saigon-build');
-    define('GFS_ACCESS', '*'); // Every deployment
-    define('GFS_PLUGLOC', '/some/path/');
-    define('BUILD_NRPERPM', false);
-    define('API_EVENT_SUBMISSION', 'inline');
-    define('VARNISH_CACHE_ENABLED', false);
-    define('VARNISH_CACHE_HOSTS', '127.0.0.1');
-    define('VARNISH_CACHE_HOSTNAME', 'localhost');
-}
+/* Import Distribution Info */
+require_once BASE_PATH.'/conf/dist.inc.php';
+/* Saigon request url for API access */
+define('SAIGONAPI_URL', 'http://127.0.0.1/api');
+/* Audit trail log file for log4php library */
+define('AUDIT_LOG', '/tmp/saigon-access.log');
+/* Debug flag */
+define('DEBUG', true);
+/* Show Build NRPE RPM on Global Deployment Management Page */
+define('BUILD_NRPERPM', false);
+define('BEANSTALKD_SERVER', '127.0.0.1');
+define('BEANSTALKD_TUBE', 'saigon-build');
+define('GFS_ACCESS', '*'); // Every deployment
+define('GFS_PLUGLOC', '/usr/lib/nagios/plugins/');
+define('API_EVENT_SUBMISSION', 'inline');
+/* Varnish Cache isn't exactly trustable yet (wip) */
+define('VARNISH_CACHE_ENABLED', false);
+define('VARNISH_CACHE_HOSTS', '127.0.0.1');
+define('VARNISH_CACHE_HOSTNAME', 'localhost');
+/* Authentication Module */
+define('AUTH_MODULE', 'NoAuth'); // Currently has: LDAPAuth and NoAuth
+define('SUPERMEN', 'ops'); // LDAP Group with complete control over system
 /* Import log4php Library */
 require_once BASE_PATH.'/modules/log4php/Logger.php';
 /* MVC Definitions */
@@ -85,9 +48,16 @@ define('HTML_HEADER', VIEW_DIRECTORY."header.php");
 define('HTML_FOOTER', VIEW_DIRECTORY."footer.php");
 define('MINIFIED_HTML_HEADER', VIEW_DIRECTORY."minified_header.php");
 define('MINIFIED_REFRESH_HTML_HEADER', VIEW_DIRECTORY."minified_refresh_header.php");
-define('AUTH_MODULE', 'LDAPAuth'); // Currently has: LDAPAuth and NoAuth
-define('SUPERMEN', 'control-group');
-define('SUBDEPLOYMENT_TYPES', 'staging,production');
+/* Display / Activate Clustered Commands */
+define('CLUSTER_COMMANDS', true);
+define('CLUSTER_COMMANDS_URL', 'http://some.domain.com/lapi/rawquery');
+/* Code flag for consumer tripwires */
+define('CONSUMER', false);
+/* Remove hosts from configs which aren't classified by the node matrix mapper*/
+define('SKIP_UNCLASSIFED_HOSTS', true);
+/* Import Datastore Module Info */
+require_once BASE_PATH.'/conf/datastoremodules.inc.php';
 /* Import Host Module Info */
 require_once BASE_PATH.'/conf/hostmodules.inc.php';
-
+/* Import Third Party Module Info */
+require_once BASE_PATH.'/conf/thirdpartymodules.inc.php';

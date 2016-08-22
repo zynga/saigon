@@ -59,6 +59,9 @@ class ContactTemplateDataRenderer implements LoggerRendererObject
     {
         $contactInfo = array();
         foreach ($testData->contactInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($contactInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -69,6 +72,9 @@ class ContactTemplateDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldContactInfo = array();
             foreach ($testData->oldContactInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldContactInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_contact_template_info=[".implode(", ", $oldContactInfo)."]";

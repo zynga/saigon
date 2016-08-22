@@ -36,10 +36,21 @@ sub processjob {
     my $job = shift;
     my $data = decode_json($job);
     if ( $data->{type} eq 'nsca' ) {
-        my $command = "echo " . $data->{data} . " | ";
-        $command .= $o_nscabin . " -H " . $data->{server} . " ";
-        $command .= "-d , -c " . $o_nscacfg . " 2>&1 >/dev/null";
-        system($command);
+        if ( $data->{server} =~ /,/ ) {
+            my @servers = split(',', $data->{server});
+            foreach my $server ( @servers ) {
+                my $command = "echo " . $data->{data} . " | ";
+                $command .= $o_nscabin . " -H " . $server . " ";
+                $command .= "-d , -c " . $o_nscacfg . " 2>&1 >/dev/null";
+                system($command);
+            }
+        }
+        else {
+            my $command = "echo " . $data->{data} . " | ";
+            $command .= $o_nscabin . " -H " . $data->{server} . " ";
+            $command .= "-d , -c " . $o_nscacfg . " 2>&1 >/dev/null";
+            system($command);
+        }
     }
     return;
 }

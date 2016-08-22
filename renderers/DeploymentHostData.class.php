@@ -50,6 +50,9 @@ class DeploymentHostDataRenderer implements LoggerRendererObject
     {
         $hostGroupInfo = array();
         foreach ($testData->hostInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($hostGroupInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";

@@ -9,13 +9,19 @@
 class HostTempController extends Controller {
 
     private function fetchHostTemplateInfo($deployment, $action, $modrevision) {
-        $keys = array('checkcmd', 'initstate', 'maxchkatts', 'chkinterval', 'chkretryinterval', 'activechk', 'passivechk', 'chkperiod', 'ppdata', 'retstatusinfo', 'retnstatusinfo', 'contacts', 'contactgrps', 'notifenabled', 'notifinterval', 'notifperiod', 'notifopts', 'notesurl');
+        $keys = array(
+            'checkcmd', 'initstate', 'maxchkatts', 'chkinterval', 'chkretryinterval', 'activechk',
+            'passivechk', 'chkperiod', 'ppdata', 'retstatusinfo', 'retnstatusinfo', 'contacts',
+            'contactgrps', 'notifenabled', 'notifinterval', 'notifperiod', 'notifopts', 'notesurl',
+            'ehcmd', 'ehenabled'
+        );
         $hostInfo = array();
         $hostInfo['name'] = $this->getParam('hostName');
         $hostInfo['alias'] = $this->getParam('hostAlias');
         $hostInfo['use'] = $this->getParam('usetemplate');
         foreach ($keys as $key) {
             $value = $this->getParam($key);
+            if ($value === false) continue;
             if ($value == 'on') $value = 1;
             if ($value == 'off') $value = 0;
             switch ($key) {
@@ -42,11 +48,9 @@ class HostTempController extends Controller {
                 case 'retnstatusinfo':
                     $hostInfo['retain_nonstatus_information'] = $value; break;
                 case 'contacts':
-                    if ($value === false) break;
-                    $hostInfo['contacts'] = implode(",", $value); break;
+                    $hostInfo['contacts'] = $value; break;
                 case 'contactgrps':
-                    if ($value === false) break;
-                    $hostInfo['contact_groups'] = implode(",", $value); break;
+                    $hostInfo['contact_groups'] = $value; break;
                 case 'notifenabled':
                     $hostInfo['notifications_enabled'] = $value; break;
                 case 'notifinterval':
@@ -54,11 +58,14 @@ class HostTempController extends Controller {
                 case 'notifperiod':
                     $hostInfo['notification_period'] = $value; break;
                 case 'notifopts':
-                    if ($value === false) break;
-                    $hostInfo['notification_options'] = implode(",", $value); break;
+                    $hostInfo['notification_options'] = $value; break;
                 case 'notesurl':
                     if ($value === false) break;
                     $hostInfo['notes_url'] = $value; break;
+                case 'ehcmd':
+                    $hostInfo['event_handler'] = $value; break;
+                case 'ehenabled':
+                    $hostInfo['event_handler_enabled'] = $value; break;
                 default:
                     break;
             }
@@ -69,9 +76,10 @@ class HostTempController extends Controller {
             $viewData->hostInfo = $hostInfo;
             $viewData->hosttemplates = RevDeploy::getCommonMergedDeploymentHostTemplates($deployment, $modrevision);
             $viewData->hostchkcmds = RevDeploy::getCommonMergedDeploymentHostCheckCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
+            $viewData->cmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
             $viewData->action = $action;
             $viewData->deployment = $deployment;
             $this->sendResponse('host_template_action_stage', $viewData);
@@ -82,9 +90,10 @@ class HostTempController extends Controller {
             $viewData->hostInfo = $hostInfo;
             $viewData->hosttemplates = RevDeploy::getCommonMergedDeploymentHostTemplates($deployment, $modrevision);
             $viewData->hostchkcmds = RevDeploy::getCommonMergedDeploymentHostCheckCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
+            $viewData->cmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
             $viewData->action = $action;
             $viewData->deployment = $deployment;
             $this->sendResponse('host_template_action_stage', $viewData);
@@ -108,9 +117,10 @@ class HostTempController extends Controller {
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->hosttemplates = RevDeploy::getCommonMergedDeploymentHostTemplates($deployment, $modrevision);
         $viewData->hostchkcmds = RevDeploy::getCommonMergedDeploymentHostCheckCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
+        $viewData->cmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->action = 'add_write';
         $this->sendResponse('host_template_action_stage', $viewData);
@@ -119,7 +129,7 @@ class HostTempController extends Controller {
     public function add_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('host_template_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -132,9 +142,10 @@ class HostTempController extends Controller {
             $viewData->deployment = $deployment;
             $viewData->hosttemplates = RevDeploy::getCommonMergedDeploymentHostTemplates($deployment, $modrevision);
             $viewData->hostchkcmds = RevDeploy::getCommonMergedDeploymentHostCheckCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
+            $viewData->cmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
             $viewData->hostInfo = $hostInfo;
             $this->sendResponse('host_template_action_stage', $viewData);
         }
@@ -159,10 +170,11 @@ class HostTempController extends Controller {
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->hosttemplates = RevDeploy::getCommonMergedDeploymentHostTemplates($deployment, $modrevision);
         $viewData->hostchkcmds = RevDeploy::getCommonMergedDeploymentHostCheckCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->hostInfo = RevDeploy::getDeploymentHostTemplate($deployment, $hostTemplate, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
+        $viewData->cmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->hosttemplate = $hostTemplate;
         $viewData->action = 'modify_write';
@@ -173,7 +185,7 @@ class HostTempController extends Controller {
     public function modify_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('host_template_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -209,7 +221,7 @@ class HostTempController extends Controller {
     public function del_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('host_template_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $hostTemplate = $this->getParam('hosttemp');
         if ($hostTemplate === false) {
@@ -236,10 +248,11 @@ class HostTempController extends Controller {
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->hosttemplates = RevDeploy::getCommonMergedDeploymentHostTemplates($deployment, $modrevision);
         $viewData->hostchkcmds = RevDeploy::getCommonMergedDeploymentHostCheckCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->hostInfo = RevDeploy::getDeploymentHostTemplate($deployment, $hostTemplate, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
+        $viewData->cmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->hosttemplate = $hostTemplate;
         $viewData->action = 'copy_write';
@@ -256,14 +269,13 @@ class HostTempController extends Controller {
             $this->sendError('generic_error', $viewData);
         }
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $commonrevision = RevDeploy::getDeploymentRev($commonRepo);
         $viewData->hosttemplates = RevDeploy::getCommonMergedDeploymentHostTemplates($deployment, $modrevision);
         $viewData->hostchkcmds = RevDeploy::getCommonMergedDeploymentHostCheckCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
-        $viewData->hostInfo = RevDeploy::getDeploymentHostTemplate($commonRepo, $hostTemplate, $commonrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
+        $viewData->hostInfo = RevDeploy::getCommonMergedDeploymentHostTemplate($deployment, $hostTemplate, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
+        $viewData->cmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->hosttemplate = $hostTemplate;
         $viewData->action = 'copy_write';
@@ -273,7 +285,7 @@ class HostTempController extends Controller {
     public function copy_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('host_template_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $hostName = $this->getParam('hostName');
@@ -285,9 +297,10 @@ class HostTempController extends Controller {
             $viewData->deployment = $deployment;
             $viewData->hosttemplates = RevDeploy::getCommonMergedDeploymentHostTemplates($deployment, $modrevision);
             $viewData->hostchkcmds = RevDeploy::getCommonMergedDeploymentHostCheckCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
+            $viewData->cmds = RevDeploy::getCommonMergedDeploymentCommands($deployment, $modrevision);
             $viewData->hostInfo = $hostInfo;
             $this->sendResponse('host_template_action_stage', $viewData);
         }

@@ -42,17 +42,19 @@ if ((isset($viewData->nrpecmds)) && (!empty($viewData->nrpecmds))) {
 <?php
             } else {
 ?>
-                <a class="deployBtn" title="Modify" href="action.php?controller=nrpecmd&action=modify_stage&deployment=<?php echo $deployment?>&cmdname=<?php echo $nrpecmd?>">Modify</a>
                 <a class="deployBtn" title="Copy" href="action.php?controller=nrpecmd&action=copy_stage&deployment=<?php echo $deployment?>&cmdname=<?php echo $nrpecmd?>">Copy</a>
                 <a class="deployBtn" title="Copy To" href="action.php?controller=nrpecmd&action=copy_to_stage&deployment=<?php echo $deployment?>&cmdname=<?php echo $nrpecmd?>">Copy To</a>
+                <div class="divCacGroup"></div>
+                <a class="deployBtn" title="Modify" href="action.php?controller=nrpecmd&action=modify_stage&deployment=<?php echo $deployment?>&cmdname=<?php echo $nrpecmd?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=nrpecmd&action=del_stage&deployment=<?php echo $deployment?>&cmdname=<?php echo $nrpecmd?>">Delete</a>
 <?php
             }
         } else {
 ?>
-                <a class="deployBtn" title="Modify" href="action.php?controller=nrpecmd&action=modify_stage&deployment=<?php echo $deployment?>&cmdname=<?php echo $nrpecmd?>">Modify</a>
                 <a class="deployBtn" title="Copy" href="action.php?controller=nrpecmd&action=copy_stage&deployment=<?php echo $deployment?>&cmdname=<?php echo $nrpecmd?>">Copy</a>
                 <a class="deployBtn" title="Copy To" href="action.php?controller=nrpecmd&action=copy_to_stage&deployment=<?php echo $deployment?>&cmdname=<?php echo $nrpecmd?>">Copy To</a>
+                <div class="divCacGroup"></div>
+                <a class="deployBtn" title="Modify" href="action.php?controller=nrpecmd&action=modify_stage&deployment=<?php echo $deployment?>&cmdname=<?php echo $nrpecmd?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=nrpecmd&action=del_stage&deployment=<?php echo $deployment?>&cmdname=<?php echo $nrpecmd?>">Delete</a>
 <?php
         }

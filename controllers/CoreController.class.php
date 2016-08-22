@@ -26,14 +26,14 @@ class CoreController extends Controller
         } else {
             $viewDeployments = array();
             foreach ($deployments as $deployment) {
-                if (($return = $this->checkGroupAuth($deployment, true)) === true) {
+                if (($return = $this->checkGroupAuthByDeployment($deployment, true)) === true) {
                     array_push($viewDeployments, $deployment);
                 }
             }
         }
         asort($viewDeployments);
         $viewData->deployments = $viewDeployments;
-        $viewData->superuser = $this->checkGroupAuth(SUPERMEN, true);
+        $viewData->superuser = $this->checkGroupAuthByGroup(SUPERMEN, true);
         $this->sendResponse('site_input', $viewData);
     }
 
@@ -54,19 +54,19 @@ class CoreController extends Controller
         } else if ($deployment == '----') {
             exit();
         } else if ($deployment == 'common') {
-            if (($return = $this->checkGroupAuth(SUPERMEN, true)) === false) {
+            if (($return = $this->checkGroupAuthByGroup(SUPERMEN, true)) === false) {
                 $viewData->header = $this->getErrorHeader('site_error');
                 $viewData->error = 'Access Prohibited: Unable to display deployment information for common.';
                 $this->sendError('generic_error', $viewData);
             }
         } else {
-            if (($return = $this->checkGroupAuth($deployment, true)) === false) {
+            if (($return = $this->checkGroupAuthByDeployment($deployment, true)) === false) {
                 $viewData->header = $this->getErrorHeader('site_error');
                 $viewData->error = 'Access Prohibited: Unable to display deployment information for '.$deployment;
                 $this->sendError('generic_error', $viewData);
             }
         }
-        $viewData->superuser = $this->checkGroupAuth(SUPERMEN, true);
+        $viewData->superuser = $this->checkGroupAuthByGroup(SUPERMEN, true);
         $viewData->deployment = $deployment;
         $viewData->deploysettings = RevDeploy::getDeploymentMiscSettings($deployment);
         $this->sendResponse('site_menu', $viewData);

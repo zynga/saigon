@@ -56,6 +56,9 @@ class CgiConfigDataRenderer implements LoggerRendererObject
     {
         $configinfo = array();
         foreach ($testData->configinfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($configinfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -68,6 +71,9 @@ class CgiConfigDataRenderer implements LoggerRendererObject
         if (($testData->action == 'modify') || ($testData->action =='delete')) {
             $oldConfiginfo = array();
             foreach ($testData->oldConfiginfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldConfiginfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_cgi_cfg_info=[".implode(", ", $oldConfiginfo)."]";

@@ -14,7 +14,7 @@
  * Show Revision Routes
  */
 
-$app->get('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function($deployment, $revision, $subdeployment = false) use ($app) {
+$app->get('/sapi/configs/:deployment/show/:revision', function($deployment, $revision) use ($app) {
     check_deployment_exists($app, $deployment);
     if (RevDeploy::existsDeploymentRev($deployment, $revision) === false) {
         $apiResponse = new APIViewData(1, $deployment,
@@ -22,9 +22,9 @@ $app->get('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function(
         );
         $app->halt(404, $apiResponse->returnJson());
     }
-    $islocked = NagTester::getDeploymentBuildLock($deployment, $subdeployment, $revision);
+    $islocked = RevDeploy::existsConsumerDeploymentLock($deployment, $revision, 'build');
     if ($islocked === false) {
-        $deploymentResults = NagTester::getDeploymentBuildInfo($deployment, $subdeployment, $revision);
+        $deploymentResults = RevDeploy::getConsumerDeploymentInfo($deployment, $revision, 'build');
         if (empty($deploymentResults)) {
             $apiResponse = new APIViewData(1, $deployment,
                 "Unable to detect configuration files, change request type to POST to initiate creation"
@@ -51,7 +51,7 @@ $app->get('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function(
     $apiResponse->printJson();
 })->name('saigon-api-configs-get-show');
 
-$app->post('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function($deployment, $revision, $subdeployment = false) use ($app) {
+$app->post('/sapi/configs/:deployment/show/:revision', function($deployment, $revision) use ($app) {
     check_deployment_exists($app, $deployment);
     check_auth($app, $deployment);
     if (RevDeploy::existsDeploymentRev($deployment, $revision) === false) {
@@ -73,10 +73,10 @@ $app->post('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function
         $showInfo = array();
         $showInfo['shard'] = $request->post('shard');
     }
-    $islocked = NagTester::getDeploymentBuildLock($deployment, $subdeployment, $revision);
+    $islocked = RevDeploy::existsConsumerDeploymentLock($deployment, $revision, 'build');
     if ($islocked === false) {
         $force = $app->request()->post('force');
-        $deploymentResults = NagTester::getDeploymentBuildInfo($deployment, $subdeployment, $revision);
+        $deploymentResults = RevDeploy::getConsumerDeploymentInfo($deployment, $revision, 'build');
         if ($force !== null) {
             NagPhean::init(BEANSTALKD_SERVER, BEANSTALKD_TUBE, true);
             NagPhean::addJob(BEANSTALKD_TUBE,
@@ -85,7 +85,6 @@ $app->post('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'build',
-                        'subdeployment' => $subdeployment,
                         'shard' => $showInfo['shard'],
                         )
                     ),
@@ -103,7 +102,6 @@ $app->post('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'build',
-                        'subdeployment' => $subdeployment,
                         'shard' => $showInfo['shard'],
                         )
                     ),
@@ -121,7 +119,6 @@ $app->post('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'build',
-                        'subdeployment' => $subdeployment,
                         'shard' => $showInfo['shard'],
                         )
                     ),
@@ -150,7 +147,7 @@ $app->post('/sapi/configs/:deployment/show/:revision(/:subdeployment)', function
  * Test Revision Routes
  */
 
-$app->get('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function($deployment, $revision, $subdeployment = false) use ($app) {
+$app->get('/sapi/configs/:deployment/test/:revision', function($deployment, $revision) use ($app) {
     check_deployment_exists($app, $deployment);
     if (RevDeploy::existsDeploymentRev($deployment, $revision) === false) {
         $apiResponse = new APIViewData(1, $deployment,
@@ -158,9 +155,9 @@ $app->get('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function(
         );
         $app->halt(404, $apiResponse->returnJson());
     }
-    $islocked = NagTester::getDeploymentTestLock($deployment, $subdeployment, $revision);
+    $islocked = RevDeploy::existsConsumerDeploymentLock($deployment, $revision, 'test');
     if ($islocked === false) {
-        $deploymentResults = NagTester::getDeploymentTestInfo($deployment, $subdeployment, $revision);
+        $deploymentResults = RevDeploy::getConsumerDeploymentInfo($deployment, $revision, 'test');
         if (empty($deploymentResults)) {
             $apiResponse = new APIViewData(1, $deployment,
                 "Unable to detect configuration files, change request type to POST to initiate creation"
@@ -181,7 +178,7 @@ $app->get('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function(
     $apiResponse->printJson();
 })->name('saigon-api-configs-get-test');
 
-$app->post('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function($deployment, $revision, $subdeployment = false) use ($app) {
+$app->post('/sapi/configs/:deployment/test/:revision', function($deployment, $revision) use ($app) {
     check_deployment_exists($app, $deployment);
     check_auth($app, $deployment);
     if (RevDeploy::existsDeploymentRev($deployment, $revision) === false) {
@@ -203,10 +200,10 @@ $app->post('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function
         $testInfo = array();
         $testInfo['shard'] = $request->post('shard');
     }
-    $islocked = NagTester::getDeploymentTestLock($deployment, $subdeployment, $revision);
+    $islocked = RevDeploy::existsConsumerDeploymentLock($deployment, $revision, 'test');
     if ($islocked === false) {
         $force = $app->request()->post('force');
-        $deploymentResults = NagTester::getDeploymentTestInfo($deployment, $subdeployment, $revision);
+        $deploymentResults = RevDeploy::getConsumerDeploymentInfo($deployment, $revision, 'test');
         if ($force !== null) {
             NagPhean::init(BEANSTALKD_SERVER, BEANSTALKD_TUBE, true);
             NagPhean::addJob(BEANSTALKD_TUBE,
@@ -215,7 +212,6 @@ $app->post('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'test',
-                        'subdeployment' => $subdeployment,
                         'shard' => $testInfo['shard'],
                         )
                     ),
@@ -233,7 +229,6 @@ $app->post('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'test',
-                        'subdeployment' => $subdeployment,
                         'shard' => $testInfo['shard'],
                         )
                     ),
@@ -251,7 +246,6 @@ $app->post('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function
                         'deployment' => $deployment,
                         'revision' => $revision,
                         'type' => 'test',
-                        'subdeployment' => $subdeployment,
                         'shard' => $testInfo['shard'],
                         )
                     ),
@@ -280,11 +274,11 @@ $app->post('/sapi/configs/:deployment/test/:revision(/:subdeployment)', function
  * Diff Config Routes
  */
 
-$app->get('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployment, $subdeployment = false) use ($app) {
+$app->get('/sapi/configs/:deployment/diff', function($deployment) use ($app) {
     check_deployment_exists($app, $deployment);
-    $islocked = NagTester::getDeploymentDiffLock($deployment, $subdeployment);
+    $islocked = RevDeploy::existsConsumerDeploymentLock($deployment, false, 'diff');
     if ($islocked === false) {
-        $diffResults = NagTester::getDeploymentDiffInfo($deployment, $subdeployment);
+        $diffResults = RevDeploy::getConsumerDeploymentInfo($deployment, false, 'diff');
         if (empty($diffResults)) {
             $apiResponse = new APIViewData(1, $deployment,
                 "Unable to detect diff results, change request type to POST to initiate creation"
@@ -318,7 +312,7 @@ $app->get('/sapi/configs/:deployment/diff(/:subdeployment)', function($deploymen
     $apiResponse->printJson();
 })->name('saigon-api-configs-get-diff');
 
-$app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployment, $subdeployment = false) use ($app) {
+$app->post('/sapi/configs/:deployment/diff', function($deployment) use ($app) {
     check_deployment_exists($app, $deployment);
     check_auth($app, $deployment);
     $request = $app->request();
@@ -351,10 +345,10 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
             $app->halt(404, $apiResponse->returnJson());
         }
     }
-    $islocked = NagTester::getDeploymentDiffLock($deployment, $subdeployment);
+    $islocked = RevDeploy::existsConsumerDeploymentLock($deployment, false, 'diff');
     if ($islocked === false) {
         $force = $request->post('force');
-        $diffResults = NagTester::getDeploymentDiffInfo($deployment, $subdeployment);
+        $diffResults = RevDeploy::getConsumerDeploymentInfo($deployment, false, 'diff');
         if ($force !== null) {
             NagPhean::init(BEANSTALKD_SERVER, BEANSTALKD_TUBE, true);
             NagPhean::addJob(BEANSTALKD_TUBE,
@@ -362,7 +356,6 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
                     array(
                         'deployment' => $deployment,
                         'type' => 'diff',
-                        'subdeployment' => $subdeployment,
                         'fromrev' => $diffInfo['from'],
                         'torev' => $diffInfo['to'],
                         'shard' => $diffInfo['shard'],
@@ -388,7 +381,6 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
                     array(
                         'deployment' => $deployment,
                         'type' => 'diff',
-                        'subdeployment' => $subdeployment,
                         'fromrev' => $diffInfo['from'],
                         'torev' => $diffInfo['to'],
                         'shard' => $diffInfo['shard'],
@@ -414,7 +406,6 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
                     array(
                         'deployment' => $deployment,
                         'type' => 'diff',
-                        'subdeployment' => $subdeployment,
                         'fromrev' => $diffInfo['from'],
                         'torev' => $diffInfo['to'],
                         'shard' => $diffInfo['shard'],
@@ -440,7 +431,6 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
                     array(
                         'deployment' => $deployment,
                         'type' => 'diff',
-                        'subdeployment' => $subdeployment,
                         'fromrev' => $diffInfo['from'],
                         'torev' => $diffInfo['to'],
                         'shard' => $diffInfo['shard'],
@@ -466,7 +456,6 @@ $app->post('/sapi/configs/:deployment/diff(/:subdeployment)', function($deployme
                     array(
                         'deployment' => $deployment,
                         'type' => 'diff',
-                        'subdeployment' => $subdeployment,
                         'fromrev' => $diffInfo['from'],
                         'torev' => $diffInfo['to'],
                         'shard' => $diffInfo['shard'],
@@ -526,7 +515,7 @@ $app->get('/sapi/configs/:deployment/resource(/:staged)', function($deployment, 
     } else {
         $apiResponse->setExtraResponseData(
             'resource_config',
-            array('USER1' => 'L3Vzci9sb2NhbC9uYWdpb3MvbGliZXhlYw==')
+            NagDefaults::getNagiosResourceConfigData()
         );
     }
     $apiResponse->printJson();
@@ -627,34 +616,7 @@ $app->get('/sapi/configs/:deployment/cgi(/:staged)', function($deployment, $stag
     } else {
         $apiResponse->setExtraResponseData(
             'cgi_config',
-            array(
-                'main_config_file' => base64_encode('/usr/local/nagios/etc/nagios.cfg'),
-                'physical_html_path' => base64_encode('/usr/local/nagios/share'),
-                'url_html_path' => base64_encode('/nagios'),
-                'show_context_help' => 0,
-                'use_pending_states' => 1,
-                'use_authentication' => 1,
-                'use_ssl_authentication' => 0,
-                'authorized_for_system_information' => "*",
-                'authorized_for_configuration_information' => "*",
-                'authorized_for_system_commands' => "*",
-                'authorized_for_all_services' => "*",
-                'authorized_for_all_hosts' => "*",
-                'authorized_for_all_service_commands' => "*",
-                'authorized_for_all_host_commands' => "*",
-                'authorized_for_read_only' => "",
-                'default_statusmap_layout' => 5,
-                'default_statuswrl_layout' => 4,
-                'ping_syntax' => base64_encode('/bin/ping -n -U -c 5 $HOSTADDRESS$'),
-                'refresh_rate' => 90,
-                'escape_html_tags' => 1,
-                'action_url_target' => '_blank',
-                'notes_url_target' => '_blank',
-                'lock_author_names' => 1,
-                'enable_splunk_integration' => 0,
-                'splunk_url' => base64_encode('http://127.0.0.1:8000/'),
-                'result_limit' => 0,
-            )
+            NagDefaults::getNagiosCGIConfigData()
         );
     }
     $apiResponse->printJson();
@@ -723,8 +685,15 @@ $app->post('/sapi/configs/:deployment/cgi', function($deployment) use ($app) {
             case "authorized_for_all_service_commands":
             case "authorized_for_all_host_commands":
             case "authorized_for_read_only":
-                if (is_array($cgiConfigInfo[$key])) $cgiConfigInfo[$key] = implode(',', $cgiConfigInfo[$key]);
-                validateForbiddenChars($app, $deployment, '/[^\w-\*]/s', $key, $cgiConfigInfo[$key]); break;
+                if (is_array($cgiConfigInfo[$key])) {
+                    foreach ($cgiConfigInfo[$key] as $value) {
+                        validateForbiddenChars($app, $deployment, '/[^\w-\*]/s', $key, $value);
+                    }
+                    break;
+                }
+                else {
+                    validateForbiddenChars($app, $deployment, '/[^\w-\*]/s', $key, $cgiConfigInfo[$key]); break;
+                }
             default:
                 break;
         }
@@ -782,130 +751,7 @@ $app->get('/sapi/configs/:deployment/nagios(/:staged)', function($deployment, $s
     } else {
         $apiResponse->setExtraResponseData(
             'nagios_config',
-            array(
-            	'accept_passive_host_checks' => 1,
-            	'accept_passive_service_checks' => 1,
-            	'cached_host_check_horizon' => 15,
-            	'cached_service_check_horizon' => 15,
-            	'cfg_dir' => base64_encode('/usr/local/nagios/etc/objects'),
-            	'check_external_commands' => 1,
-            	'check_for_orphaned_hosts' => 1,
-            	'check_for_orphaned_services' => 1,
-            	'check_host_freshness' => 1,
-            	'check_result_path' => base64_encode('/usr/local/nagios/var/spool/checkresults'),
-            	'check_result_reaper_frequency' => 10,
-            	'check_service_freshness' => 1,
-            	'command_check_interval' => -1,
-            	'command_file' => base64_encode('/usr/local/nagios/var/rw/nagios.cmd'),
-            	'enable_event_handlers' => 1,
-            	'enable_notifications' => 1,
-            	'enable_predictive_host_dependency_checks' => 1,
-            	'enable_predictive_service_dependency_checks' => 1,
-            	'event_broker_options' => -1,
-            	'event_handler_timeout' => 30,
-            	'execute_host_checks' => 1,
-            	'execute_service_checks' => 1,
-            	'external_command_buffer_slots' => 4096,
-            	'host_check_timeout' => 30,
-            	'host_freshness_check_interval' => 60,
-            	'illegal_macro_output_chars' => base64_encode('`~$&|\'"<>'),
-            	'illegal_object_name_chars' => base64_encode('`~!$%^&*|\'"<>?,()='),
-            	'lock_file' => base64_encode('/usr/local/nagios/var/nagios.lock'),
-            	'log_archive_path' => base64_encode('/usr/local/nagios/var/archives'),
-            	'log_event_handlers' => 1,
-            	'log_external_commands' => 1,
-            	'log_file' => base64_encode('/usr/local/nagios/var/nagios.log'),
-            	'log_host_retries' => 1,
-            	'log_initial_states' => 0,
-            	'log_notifications' => 1,
-            	'log_passive_checks' => 1,
-            	'log_rotation_method' => 'd',
-            	'log_service_retries' => 1,
-            	'max_check_result_file_age' => 3600,
-            	'max_check_result_reaper_time' => 30,
-            	'nagios_group' => 'nagios',
-            	'nagios_user' => 'nagios',
-            	'notification_timeout' => 30,
-            	'object_cache_file' => base64_encode('/usr/local/nagios/var/objects.cache'),
-            	'precached_object_file' => base64_encode('/usr/local/nagios/var/objects.precache'),
-            	'resource_file' => base64_encode('/usr/local/nagios/etc/resource.cfg'),
-            	'retain_state_information' => 1,
-            	'retention_update_interval' => 60,
-            	'service_check_timeout' => 60,
-            	'service_freshness_check_interval' => 60,
-            	'soft_state_dependencies' => 0,
-            	'state_retention_file' => base64_encode('/usr/local/nagios/var/retention.dat'),
-            	'status_file' => base64_encode('/usr/local/nagios/var/status.dat'),
-            	'status_update_interval' => 10,
-            	'temp_file' => base64_encode('/usr/local/nagios/var/nagios.tmp'),
-            	'temp_path' => base64_encode('/tmp'),
-            	'use_large_installation_tweaks' => 0,
-            	'use_retained_program_state' => 1,
-            	'use_retained_scheduling_info' => 1,
-            	'use_syslog' => 1,
-            	'additional_freshness_latency' => 15,
-            	'admin_email' => 'nagios@localhost.com',
-            	'admin_pager' => 'pagenagios@localhost.com',
-            	'auto_reschedule_checks' => 0,
-            	'auto_rescheduling_interval' => 30,
-            	'auto_rescheduling_window' => 180,
-            	'bare_update_check' => 0,
-            	'check_for_updates' => 0,  // Not Default
-            	'daemon_dumps_core' => 0,
-            	'date_format' => 'us',
-            	'debug_file' => base64_encode('/usr/local/nagios/var/nagios.debug'),
-            	'debug_level' => 0,
-            	'debug_verbosity' => 1,
-            	'enable_embedded_perl' => 1,
-            	'enable_environment_macros' => 0,  // Not Default
-            	'enable_flap_detection' => 0,  // Not Default
-            	'high_host_flap_threshold' => 20.0,
-            	'high_service_flap_threshold' => 20.0,
-            	'host_inter_check_delay_method' => 's',
-            	'interval_length' => 60,
-            	'low_host_flap_threshold' => 5.0,
-            	'low_service_flap_threshold' => 5.0,
-            	'max_concurrent_checks' => 0,
-            	'max_host_check_spread' => 30,
-            	'max_service_check_spread' => 30,
-            	'max_debug_file_size' => 1000000,
-            	'obsess_over_hosts' => 0,
-            	'obsess_over_services' => 0,
-            	'ocsp_timeout' => 5,
-            	'ochp_timeout' => 5,
-            	'ocsp_command' => base64_encode('ocsp_command'),
-            	'ochp_command' => base64_encode('ochp_command'),
-            	'p1_file' => base64_encode('/usr/local/nagios/bin/p1.pl'),
-            	'passive_host_checks_are_soft' => 0,
-            	'retained_contact_host_attribute_mask' => 0,
-            	'retained_contact_service_attribute_mask' => 0,
-            	'retained_host_attribute_mask' => 0,
-            	'retained_process_host_attribute_mask' => 0,
-            	'retained_process_service_attribute_mask' => 0,
-            	'retained_service_attribute_mask' => 0,
-            	'service_inter_check_delay_method' => 's',
-            	'service_interleave_factor' => 's',
-            	'sleep_time' => 0.25,
-            	'translate_passive_host_checks' => 0,
-            	'use_aggressive_host_checking' => 0,
-            	'use_embedded_perl_implicitly' => 1,
-            	'use_regexp_matching' => 0,
-            	'use_true_regexp_matching' => 0,
-            	'process_performance_data' => 0,
-            	'perfdata_timeout' => 5,
-            	'host_perfdata_command' => base64_encode('process-host-perfdata'),
-            	'service_perfdata_command' => base64_encode('process-service-perfdata'),
-            	'host_perfdata_file' => base64_encode('/tmp/host-perfdata'),
-            	'service_perfdata_file' => base64_encode('/tmp/service-perfdata'),
-            	'host_perfdata_file_template' => base64_encode('[HOSTPERFDATA]\t$TIMET$\t$HOSTNAME$\t$HOSTEXECUTIONTIME$\t$HOSTOUTPUT$\t$HOSTPERFDATA$'),
-            	'service_perfdata_file_template' => base64_encode('[SERVICEPERFDATA]\t$TIMET$\t$HOSTNAME$\t$SERVICEDESC$\t$SERVICEEXECUTIONTIME$\t$SERVICELATENCY$\t$SERVICEOUTPUT$\t$SERVICEPERFDATA$'),
-            	'host_perfdata_file_mode' => 'a',
-            	'service_perfdata_file_mode' => 'a',
-            	'host_perfdata_file_processing_interval' => 0,
-            	'service_perfdata_file_processing_interval' => 0,
-            	'host_perfdata_file_processing_command' => base64_encode('process-host-perfdata-file'),
-            	'service_perfdata_file_processing_command' => base64_encode('process-service-perfdata-file'),
-            )
+            NagDefaults::getNagiosConfigData()
         );
     }
     $apiResponse->printJson();

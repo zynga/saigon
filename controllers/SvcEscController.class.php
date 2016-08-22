@@ -24,7 +24,7 @@ class SvcEscController extends Controller {
             $viewData->error = 'Unable to detect name specified for service escalation';
             $viewData->svcescinfo = $svcEscInfo;
             $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->deployment = $deployment;
@@ -35,7 +35,7 @@ class SvcEscController extends Controller {
             $viewData->error = 'Unable to detect service specified for escalation';
             $viewData->svcescinfo = $svcEscInfo;
             $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->deployment = $deployment;
@@ -46,7 +46,7 @@ class SvcEscController extends Controller {
             $viewData->error = 'Unable to detect contacts and contact groups, make sure at least a contact or contact group is specified';
             $viewData->svcescinfo = $svcEscInfo;
             $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->deployment = $deployment;
@@ -57,7 +57,7 @@ class SvcEscController extends Controller {
             $viewData->error = 'Unable to detect first notification threshold';
             $viewData->svcescinfo = $svcEscInfo;
             $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->deployment = $deployment;
@@ -68,7 +68,7 @@ class SvcEscController extends Controller {
             $viewData->error = 'Unable to detect last notification threshold';
             $viewData->svcescinfo = $svcEscInfo;
             $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->deployment = $deployment;
@@ -79,16 +79,13 @@ class SvcEscController extends Controller {
             $viewData->error = 'Unable to detect notification interval';
             $viewData->svcescinfo = $svcEscInfo;
             $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->deployment = $deployment;
             $viewData->action = $action;
             $this->sendResponse('svc_esc_action_stage', $viewData);
         }
-        if ($svcEscInfo['contacts'] !== false) $svcEscInfo['contacts'] = implode(',', $svcEscInfo['contacts']);
-        if ($svcEscInfo['contact_groups'] !== false) $svcEscInfo['contact_groups'] = implode(',', $svcEscInfo['contact_groups']);
-        if ($svcEscInfo['escalation_options'] !== false) $svcEscInfo['escalation_options'] = implode(',', $svcEscInfo['escalation_options']);
         return $svcEscInfo;
     }
 
@@ -96,7 +93,7 @@ class SvcEscController extends Controller {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_esc_error');
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
-        $viewData->svcescs = RevDeploy::getDeploymentSvcEscalationswInfo($deployment, $modrevision);
+        $viewData->svcescs = RevDeploy::getCommonMergedDeploymentSvcEscalationswInfo($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $this->sendResponse('svc_esc_stage', $viewData);
     }
@@ -106,7 +103,7 @@ class SvcEscController extends Controller {
         $deployment = $this->getDeployment('svc_esc_error');
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->deployment = $deployment;
@@ -117,7 +114,7 @@ class SvcEscController extends Controller {
     public function add_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_esc_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->deployment = $deployment;
@@ -127,7 +124,7 @@ class SvcEscController extends Controller {
             $viewData->error = 'Service Escalation information exists for '.$svcEscName.' in '.$deployment.' Deployment';
             $viewData->svcescinfo = $svcEscInfo;
             $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->action = 'add_write';
@@ -155,7 +152,7 @@ class SvcEscController extends Controller {
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->svcescinfo = RevDeploy::getDeploymentSvcEscalation($deployment, $svcEscName, $modrevision);
         $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->deployment = $deployment;
@@ -166,7 +163,7 @@ class SvcEscController extends Controller {
     public function modify_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_esc_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->deployment = $deployment;
@@ -202,7 +199,7 @@ class SvcEscController extends Controller {
     public function del_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_esc_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $svcEscName = $this->getParam('svcEsc');
         if ($svcEscName === false) {
@@ -229,7 +226,7 @@ class SvcEscController extends Controller {
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->svcescinfo = RevDeploy::getDeploymentSvcEscalation($deployment, $svcEscName, $modrevision);
         $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->deployment = $deployment;
@@ -247,11 +244,9 @@ class SvcEscController extends Controller {
             $this->sendError('generic_error', $viewData);
         }
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $commonrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $viewData->svcescinfo = RevDeploy::getDeploymentSvcEscalation($commonRepo, $svcEscName, $commonrevision);
+        $viewData->svcescinfo = RevDeploy::getCommonMergedDeploymentSvcEscalation($deployment, $svcEscName, $modrevision);
         $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->deployment = $deployment;
@@ -262,7 +257,7 @@ class SvcEscController extends Controller {
     public function copy_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_esc_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $svcEscInfo = $this->fetchSvcEscInfo($deployment, 'copy_write', $modrevision);
@@ -270,7 +265,7 @@ class SvcEscController extends Controller {
         if (RevDeploy::existsDeploymentSvcEscalation($deployment, $svcEscName, $modrevision) === true) {
             $viewData->error = 'Service Escalation information exists for '.$svcEscName.' in '.$deployment.' Deployment';
             $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
             $viewData->contactgrps = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
             $viewData->svcescinfo = $svcEscInfo;

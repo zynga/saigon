@@ -18,6 +18,7 @@ $svcDepParent = isset($viewData->svcDepInfo['service_description'])?$viewData->s
 $svcDepChild = isset($viewData->svcDepInfo['dependent_service_description'])?$viewData->svcDepInfo['dependent_service_description']:'';
 $svcCheckOpts = isset($viewData->svcDepInfo['execution_failure_criteria'])?$viewData->svcDepInfo['execution_failure_criteria']:array();
 $svcNotifOpts = isset($viewData->svcDepInfo['notification_failure_criteria'])?$viewData->svcDepInfo['notification_failure_criteria']:array();
+$svcDepInherit = isset($viewData->svcDepInfo['inherits_parent'])?$viewData->svcDepInfo['inherits_parent']:false;
 
 ?>
 <link type="text/css" rel="stylesheet" href="static/css/tables.css" />
@@ -138,6 +139,13 @@ foreach ($viewData->svcs as $service => $svcArray) {
 }
 ?>
             </select>
+        </td>
+    </tr><tr>
+        <th style="width:35%;text-align:right;">
+            Inherit Parent Dependencies:
+        </th>
+        <td style="text-align:left;">
+            <input type="checkbox" name="inheritparent" value="on" <?php echo ($svcDepInherit !== false)?'checked':''?> />
         </td>
     </tr><tr>
         <th style="width:35%;text-align:right;">

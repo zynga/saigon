@@ -13,12 +13,12 @@ class ContactGrpController extends Controller {
         $contactInfo['contactgroup_name'] = $this->getParam('cgName');
         $contactInfo['alias'] = $this->getParam('cgAlias');
         $contactInfo['members'] = $this->getParam('cgMembers');
-        if ($contactInfo['members'] !== false) {
-            $contactInfo['members'] = implode(",", $contactInfo['members']);
+        if ($contactInfo['members'] === false) {
+            unset($contactInfo['members']);
         }
         $contactInfo['contactgroup_members'] = $this->getParam('cgGroupMembers');
         if ($contactInfo['contactgroup_members'] !== false) {
-            $contactInfo['contactgroup_members'] = implode(",", $contactInfo['contactgroup_members']);
+            unset($contactInfo['contactgroup_members']);
         }
         if (($contactInfo['contactgroup_name'] === false) || ($contactInfo['alias'] === false)) {
             $viewData = new ViewData();
@@ -75,7 +75,7 @@ class ContactGrpController extends Controller {
     public function add_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('contact_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->deployment = $deployment;
@@ -116,7 +116,7 @@ class ContactGrpController extends Controller {
     public function modify_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('contact_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->deployment = $deployment;
@@ -152,7 +152,7 @@ class ContactGrpController extends Controller {
     public function del_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('contact_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $cgName = $this->getParam('cgName');
         if ($cgName === false) {
@@ -162,17 +162,17 @@ class ContactGrpController extends Controller {
         }
         $viewData->deployment = $deployment;
         $viewData->contact = $cgName;
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         if ($deployment != 'common') {
             $cGrpsInfo = RevDeploy::getDeploymentContactGroupswInfo($deployment, $modrevision);
             foreach ($cGrpsInfo as $cGrp => $cGrpInfo) {
                 if (empty($cGrpInfo['contactgroup_members'])) continue;
-                $members = explode(',', $cGrpInfo['contactgroup_members']);
+                $members = $cGrpInfo['contactgroup_members'];
                 if (($key = array_search($cgName, $members)) !== false) {
                     unset($members[$key]);
                     $members = array_values($members);
-                    $cGrpInfo['contactgroup_members'] = implode(',', $members);
+                    $cGrpInfo['contactgroup_members'] = $members;
                     RevDeploy::modifyDeploymentContactGroup($deployment, $cGrp, $cGrpInfo, $modrevision);
                 }
             }
@@ -184,11 +184,11 @@ class ContactGrpController extends Controller {
                 $cGrpsInfo = RevDeploy::getDeploymentContactGroupswInfo($tmpDeployment, $tmpRevision);
                 foreach ($cGrpsInfo as $cGrp => $cGrpInfo) {
                     if (empty($cGrpInfo['contactgroup_members'])) continue;
-                    $members = explode(',', $cGrpInfo['contactgroup_members']);
+                    $members = $cGrpInfo['contactgroup_members'];
                     if (($key = array_search($cgName, $members)) !== false) {
                         unset($members[$key]);
                         $members = array_values($members);
-                        $cGrpInfo['contactgroup_members'] = implode(',', $members);
+                        $cGrpInfo['contactgroup_members'] = $members;
                         RevDeploy::modifyDeploymentContactGroup($tmpDeployment, $cGrp, $cGrpInfo, $tmpRevision);
                     }
                 }
@@ -226,9 +226,7 @@ class ContactGrpController extends Controller {
             $this->sendError('generic_error', $viewData);
         }
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $commonrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $viewData->contactInfo = RevDeploy::getDeploymentContactGroup($commonRepo, $cgName, $commonrevision);
+        $viewData->contactInfo = RevDeploy::getCommonMergedDeploymentContactGroup($deployment, $cgName, $modrevision);
         $viewData->contactgroups = RevDeploy::getCommonMergedDeploymentContactGroups($deployment, $modrevision);
         $viewData->contacts = RevDeploy::getCommonMergedDeploymentContacts($deployment, $modrevision);
         $viewData->deployment = $deployment;
@@ -239,7 +237,7 @@ class ContactGrpController extends Controller {
     public function copy_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('contact_group_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $cgName = $this->getParam('cgName');

@@ -23,7 +23,7 @@ class ResourceCfgController extends Controller
         if (RevDeploy::existsDeploymentResourceCfg($deployment, $modrevision) === true) {
             $viewData->rcfg = RevDeploy::getDeploymentResourceCfg($deployment, $modrevision);
         } else {
-            $viewData->rcfg = array('USER1' => 'L3Vzci9sb2NhbC9uYWdpb3MvbGliZXhlYw==');
+            $viewData->rcfg = NagDefaults::getNagiosResourceConfigData();
         }
         $viewData->deployment = $deployment;
         $this->sendResponse('resource_cfg_stage', $viewData);
@@ -39,7 +39,7 @@ class ResourceCfgController extends Controller
     {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('resource_cfg_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $cfgDelete = $this->getParam('delete');

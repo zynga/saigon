@@ -23,7 +23,11 @@ $nodeNServices = isset($viewData->nodeInfo['nservices'])?$viewData->nodeInfo['ns
 $nodeHostGroup = isset($viewData->nodeInfo['hostgroup'])?$viewData->nodeInfo['hostgroup']:'';
 $nodeHostTemplate = isset($viewData->nodeInfo['hosttemplate'])?$viewData->nodeInfo['hosttemplate']:'';
 $nodeStdHostTemplate = isset($viewData->nodeInfo['stdtemplate'])?$viewData->nodeInfo['stdtemplate']:'';
-$nodeSubDeployment = isset($viewData->nodeInfo['subdeployment'])?$viewData->nodeInfo['subdeployment']:'N/A';
+$nodePriority = isset($viewData->nodeInfo['priority'])?$viewData->nodeInfo['priority']:1;
+$nodeContacts = isset($viewData->nodeInfo['contacts'])?$viewData->nodeInfo['contacts']:array();
+$nodeContactGroups = isset($viewData->nodeInfo['contactgroups'])?$viewData->nodeInfo['contactgroups']:array();
+$nodeSvcTemplate = isset($viewData->nodeInfo['svctemplate'])?$viewData->nodeInfo['svctemplate']:'';
+$nodeSvcEscalations = isset($viewData->nodeInfo['svcescs'])?$viewData->nodeInfo['svcescs']:array();
 if (empty($viewData->services)) {
     $viewData->error = 'Unable to detect available services to apply to nodes';
 }
@@ -32,40 +36,61 @@ if (empty($viewData->services)) {
 <link type="text/css" rel="stylesheet" href="static/css/tables.css" />
 <script type="text/javascript">
 $(function() {
-$("#hostgroup")
-    .multiselect({
-        selectedList: 1,
-        noneSelectedText: "Select Hostgroup",
-        multiple: false,
-    }).multiselectfilter(),
-$("#stdtemplate")
-    .multiselect({
-        selectedList: 1,
-        noneSelectedText: "Select Standard Template",
-        multiple: false,
-    }).multiselectfilter(),
-$("#hosttemplate")
-    .multiselect({
-        selectedList: 1,
-        noneSelectedText: "Select Host Template",
-        multiple: false,
-    }).multiselectfilter(),
-$("#subdeployment")
-    .multiselect({
-        selectedList: 1,
-        noneSelectedText: "Select a Sub Deployment",
-        multiple: false,
-    }).multiselectfilter(),
-$("#services")
-    .multiselect({
-        selectedList: 1,
-        noneSelectedText: "Select Services",
-    }).multiselectfilter(),
-$("#nservices")
-    .multiselect({
-        selectedList: 1,
-        noneSelectedText: "Select Negate Services",
-    }).multiselectfilter();
+    $("#hostgroup")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Hostgroup",
+            multiple: false,
+        }).multiselectfilter(),
+    $("#stdtemplate")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Standard Template",
+            multiple: false,
+        }).multiselectfilter(),
+    $("#hosttemplate")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Host Template",
+            multiple: false,
+        }).multiselectfilter(),
+    $("#svctemplate")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Service Template",
+            multiple: false,
+        }).multiselectfilter(),
+    $("#services")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Services",
+        }).multiselectfilter(),
+    $("#nservices")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Negate Services",
+        }).multiselectfilter(),
+    $("#svcescs")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Service Escalations",
+        }).multiselectfilter(),
+    $("#contacts")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Contacts",
+        }).multiselectfilter(),
+    $("#contactgroups")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Contact Groups",
+        }).multiselectfilter(),
+    $("#priority")
+        .multiselect({
+            selectedList: 1,
+            multiple: false,
+            noneSelectedText: "Select Matrix Priority",
+        }).multiselectfilter();
 });
 </script>
 <script type="text/javascript">
@@ -79,6 +104,7 @@ function checkHostRegex() {
     sData['deployment'] = "<?php echo $deployment?>";
     sData['regex'] = $('#nodeRegex').val();
     sData['nregex'] = $('#nodeNegateRegex').val();
+    sData['priority'] = $('#priority').val();
     $.ajax({
         url: 'action.php',
         type: 'POST',
@@ -124,7 +150,7 @@ if ((isset($viewData->error)) && (!empty($viewData->error))) {
         <b>
             Please be sure to apply at least one of the following optional settings, not applying any will generate an error...
             <div class="divCacGroup"></div>
-            Saigon Standard Template or Nagios Host Template or Host Group or Service Checks
+            Saigon Standard Template or Host Template or Host Group or Service Checks or Service Template or Contacts or Contact Groups
         </b>
     </div>
 </div>
@@ -199,6 +225,26 @@ if ($action == 'add_write') {
             </div>
         </td>
     </tr>
+    <tr>
+        <th style="width:30%;text-align:right;">Matrix Priority:<br/><font size="2">(Applied in Ascending Order 1..5)</th>
+        <td style="text-align:left;">
+            <select id="priority" name="priority" multiple="multiple">
+<?php
+for ($i=1;$i<=5;$i++) {
+    if ($i == $nodePriority) {
+?>
+                <option value="<?php echo $i?>" selected><?php echo $i?></option>
+<?php
+    } else {
+?>
+                <option value="<?php echo $i?>"><?php echo $i?></option>
+<?php
+    }
+}
+?>
+            </select>
+        </td>
+    </tr>
 <?php
 if (!empty($viewData->stdtemplates)) {
 ?>
@@ -246,7 +292,7 @@ if (!empty($viewData->stdtemplates)) {
 }
 ?>
     <tr>
-        <th style="width:30%;text-align:right;">Nagios Host Template:<br /><font size="2">(Optional)</font></th>
+        <th style="width:30%;text-align:right;">Host Template:<br /><font size="2">(Optional)</font></th>
         <td style="text-align:left;">
             <select id="hosttemplate" name="hosttemplate" multiple="multiple">
                 <option value="">Null / No Host Template</option>
@@ -307,28 +353,77 @@ foreach ($viewData->services as $svcCmd => $svcArray) {
             </select>
         </td>
     </tr><tr>
-        <th style="width:30%;text-align:right;">Sub-Deployment Association:<br /><font size="2">(Optional)</font></th>
+        <th style="width:30%;text-align:right;">Service Template:<br /><font size="2">(Optional)</font></th>
         <td style="text-align:left;">
-            <select id="subdeployment" name="subdeployment" multiple="multiple">
+            <select id="svctemplate" name="svctemplate" multiple="multiple">
+                <option value="">Null / No Service Template</option>
 <?php
-if ($nodeSubDeployment == 'N/A') {
+asort($viewData->svctemplates);
+foreach ($viewData->svctemplates as $svctemplate => $stArray) {
+    if ($svctemplate == $nodeSvcTemplate) {
 ?>
-                <option value="N/A" selected>Not Applicable</option>
-<?php
-} else {
-?>
-                <option value="N/A">Not Applicable</option>
-<?php
-}
-$subdeployments = preg_split('/\s?,\s?/', SUBDEPLOYMENT_TYPES);
-foreach ($subdeployments as $subdeployment) {
-    if ($nodeSubDeployment == $subdeployment) {
-?>
-                <option value="<?php echo $subdeployment?>" selected><?php echo $subdeployment?></option>
+                <option value="<?php echo $svctemplate?>" selected><?php echo $svctemplate?></option>
 <?php
     } else {
 ?>
-                <option value="<?php echo $subdeployment?>"><?php echo $subdeployment?></option>
+                <option value="<?php echo $svctemplate?>"><?php echo $svctemplate?></option>
+<?php
+    }
+}
+?>
+            </select>
+        </td>
+    </tr><tr>
+        <th style="width:30%;text-align:right;">Service Escalations:<br /><font size="2">(Optional)</font></th>
+        <td style="text-align:left;">
+            <select id="svcescs" name="svcescs[]" multiple="multiple">
+<?php
+foreach ($viewData->svcescs as $svcEsc => $seArray) {
+    if ((is_array($nodeSvcEscalations)) && (in_array($svcEsc,$nodeSvcEscalations))) {
+?>
+                <option value="<?php echo $svcEsc?>" selected><?php echo $svcEsc?></option>
+<?php
+    } else {
+?>
+                <option value="<?php echo $svcEsc?>"><?php echo $svcEsc?></option>
+<?php
+    }
+}
+?>
+            </select>
+        </td>
+    </tr><tr>
+        <th style="width:30%;text-align:right;">Contacts:<br /><font size="2">(Optional)</font></th>
+        <td style="text-align:left;">
+            <select id="contacts" name="contacts[]" multiple="multiple">
+<?php
+foreach ($viewData->contacts as $contact => $cArray) {
+    if ((is_array($nodeContacts)) && (in_array($contact,$nodeContacts))) {
+?>
+                <option value="<?php echo $contact?>" selected><?php echo $contact?></option>
+<?php
+    } else {
+?>
+                <option value="<?php echo $contact?>"><?php echo $contact?></option>
+<?php
+    }
+}
+?>
+            </select>
+        </td>
+    </tr><tr>
+        <th style="width:30%;text-align:right;">Contact Groups:<br /><font size="2">(Optional)</font></th>
+        <td style="text-align:left;">
+            <select id="contactgroups" name="contactgroups[]" multiple="multiple">
+<?php
+foreach ($viewData->contactgroups as $contactGroup => $cgArray) {
+    if ((is_array($nodeContactGroups)) && (in_array($contactGroup,$nodeContactGroups))) {
+?>
+                <option value="<?php echo $contactGroup?>" selected><?php echo $contactGroup?></option>
+<?php
+    } else {
+?>
+                <option value="<?php echo $contactGroup?>"><?php echo $contactGroup?></option>
 <?php
     }
 }

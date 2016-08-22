@@ -141,9 +141,6 @@ $app->post('/sapi/nrpecfg/:deployment', function ($deployment) use ($app) {
         $app->halt(404, $apiResponse->returnJson());
     }
     // Param manipulation depending on what is detected
-    if (is_array($nrpeCfgInfo['cmds'])) {
-        $nrpeCfgInfo['cmds'] = implode(',', $nrpeCfgInfo['cmds']);
-    }
     if ((!isset($nrpeCfgInfo['include_dir'])) || (empty($nrpeCfgInfo['include_dir']))) {
         unset($nrpeCfgInfo['include_dir']);
     }

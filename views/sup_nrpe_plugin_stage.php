@@ -43,18 +43,20 @@ if ((isset($viewData->plugins)) && (!empty($viewData->plugins))) {
 <?php
             } else {
 ?>
+                <a class="deployBtn" title="View" href="action.php?controller=nrpeplugin&action=show_sup_plugin&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">View</a>
+                <a class="deployBtn" title="Copy To" href="action.php?controller=nrpeplugin&action=copy_to_stage_sup&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">Copy To</a>
+                <div class="divCacGroup"></div>
                 <a class="deployBtn" title="Modify" href="action.php?controller=nrpeplugin&action=modify_sup_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=nrpeplugin&action=delete_sup_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">Delete</a>
-                <a class="deployBtn" title="Copy To" href="action.php?controller=nrpeplugin&action=copy_to_stage_sup&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">Copy To</a>
-                <a class="deployBtn" title="View" href="action.php?controller=nrpeplugin&action=show_sup_plugin&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">View</a>
 <?php
             }
         } else {
 ?>
+                <a class="deployBtn" title="View" href="action.php?controller=nrpeplugin&action=show_sup_plugin&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">View</a>
+                <a class="deployBtn" title="Copy To" href="action.php?controller=nrpeplugin&action=copy_to_stage_sup&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">Copy To</a>
+                <div class="divCacGroup"></div>
                 <a class="deployBtn" title="Modify" href="action.php?controller=nrpeplugin&action=modify_sup_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=nrpeplugin&action=delete_sup_stage&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">Delete</a>
-                <a class="deployBtn" title="Copy To" href="action.php?controller=nrpeplugin&action=copy_to_stage_sup&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">Copy To</a>
-                <a class="deployBtn" title="View" href="action.php?controller=nrpeplugin&action=show_sup_plugin&deployment=<?php echo $deployment?>&plugin=<?php echo $nrpeplugin?>">View</a>
 <?php
         }
 ?>

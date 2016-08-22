@@ -59,6 +59,9 @@ class NodeTemplateDataRenderer implements LoggerRendererObject
     {
         $nodeTemplateInfo = array();
         foreach ($testData->nodeTemplateInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($nodeTemplateInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -69,6 +72,9 @@ class NodeTemplateDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldNodeTemplateInfo = array();
             foreach ($testData->oldNodeTemplateInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldNodeTemplateInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_node_template_info=[".implode(", ", $oldNodeTemplateInfo)."]";

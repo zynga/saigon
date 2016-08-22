@@ -339,6 +339,34 @@ if ($viewData->deploysettings['deploystyle'] != 'nagios') {
 <?php
 }
 if ($viewData->deploysettings['deploystyle'] != 'nrpe') {
+    if (CLUSTER_COMMANDS === true) {
+?>
+<!-- Begin Cluster Command -->
+<div class="divCacGroup admin_box admin_box_blue admin_border_black">
+    <div class="parentClass" id="ClusterCommands">
+        <img src="static/imgs/plusSign.gif">
+        Clustered Commands
+    </div>
+    <div class="divhide parent-desc-ClusterCommands divCacResponse">
+        <div class="divCacTagGroup"><!-- 1 Pixel Spacer --></div>
+        <div id="overview" class="divCacSubResponse">
+            The following section is for creating livestatus api calls
+            which need to return state ultimately so the results can be
+            passed off to the Nagios check_cluster plugin and report across
+            clusters of servers and/or services on those servers
+        </div>
+        <div class="divCacGroup"></div>
+        <div class="divCacSubResponse">
+            <div id="apply">
+                <a class="menuItem" href="action.php?controller=clustercmds&action=stage&deployment=<?php echo $viewData->deployment?>" target="output">Manage Clustered Commands</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="divCacTagGroup"><!-- 1 Pixel Spacer --></div>
+<!-- END Cluster Command -->
+<?php
+    }
 ?>
 <!-- Begin Node Templatizer -->
 <div class="divCacGroup admin_box admin_box_blue admin_border_black">

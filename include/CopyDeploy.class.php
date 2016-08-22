@@ -53,6 +53,7 @@ class CopyDeploy {
         $results['supnrpecfg'] = RevDeploy::getDeploymentSupNRPECfg($deployment, $fromrev);
         $results['supnrpeplugins'] = RevDeploy::getDeploymentSupNRPEPluginswData($deployment, $fromrev);
         $results['nagiosplugins'] = RevDeploy::getDeploymentNagiosPluginswData($deployment, $fromrev);
+        $results['clustercommands'] = RevDeploy::getDeploymentClusterCmdswInfo($deployment, $fromrev);
         foreach ($results as $key => $value) {
             if (empty($value)) continue;
             switch ($key) {
@@ -102,6 +103,8 @@ class CopyDeploy {
                     self::copySupNRPEPlugins($deployment, $torev, $results['supnrpeplugins']); break;
                 case 'nagiosplugins':
                     self::copyNagiosPlugins($deployment, $torev, $results['nagiosplugins']); break;
+                case 'clustercommands':
+                    self::copyClusterCommands($deployment, $torev, $results['clustercommands']); break;
                 default:
                     break;
             }
@@ -111,8 +114,7 @@ class CopyDeploy {
     private static function copyTimeperiods($deployment, $revision, array $tpInfo) {
         if (self::$init === false) self::init();
         foreach ($tpInfo as $tpName => $tpArray) {
-            if (($tpArray['deployment'] == self::$m_commonrepo) && ($tpArray['deployment'] == 'common')) continue;
-            if ($tpArray['deployment'] == self::$m_commonrepo) continue;
+            if ($tpArray['deployment'] != $deployment) continue;
             $tpTimes = $tpArray['times'];
             unset($tpArray['times']);
             unset($tpArray['deployment']);
@@ -123,8 +125,7 @@ class CopyDeploy {
     private static function copyCommands($deployment, $revision, array $cmdInfo) {
         if (self::$init === false) self::init();
         foreach ($cmdInfo as $cmd => $cmdArray) {
-            if (($cmdArray['deployment'] == self::$m_commonrepo) && ($cmdArray['deployment'] == 'common')) continue;
-            if ($cmdArray['deployment'] == self::$m_commonrepo) continue;
+            if ($cmdArray['deployment'] != $deployment) continue;
             unset($cmdArray['deployment']);
             RevDeploy::createDeploymentCommand($deployment, $cmd, $cmdArray, $revision);
         }
@@ -133,14 +134,8 @@ class CopyDeploy {
     private static function copyContactTemplates($deployment, $revision, array $ctInfo) {
         if (self::$init === false) self::init();
         foreach ($ctInfo as $ct => $ctArray) {
-            if (($ctArray['deployment'] == self::$m_commonrepo) && ($ctArray['deployment'] == 'common')) continue;
-            if ($ctArray['deployment'] == self::$m_commonrepo) continue;
+            if ($ctArray['deployment'] != $deployment) continue;
             unset($ctArray['deployment']);
-            foreach ($ctArray as $key => $value) {
-                if (is_array($ctArray[$key])) {
-                    $ctArray[$key] = implode(',', $ctArray[$key]);
-                }
-            }
             RevDeploy::createDeploymentContactTemplate($deployment, $ct, $ctArray, $revision);
         }
     }
@@ -148,13 +143,7 @@ class CopyDeploy {
     private static function copyContactGroups($deployment, $revision, array $cgInfo) {
         if (self::$init === false) self::init();
         foreach ($cgInfo as $cg => $cgArray) {
-            if (($cgArray['deployment'] == self::$m_commonrepo) && ($cgArray['deployment'] == 'common')) continue;
-            if ($cgArray['deployment'] == self::$m_commonrepo) continue;
-            foreach ($cgArray as $key => $value) {
-                if (is_array($cgArray[$key])) {
-                    $cgArray[$key] = implode(',', $cgArray[$key]);
-                }
-            }
+            if ($cgArray['deployment'] != $deployment) continue;
             unset($cgArray['deployment']);
             RevDeploy::createDeploymentContactGroup($deployment, $cg, $cgArray, $revision);
         }
@@ -163,13 +152,8 @@ class CopyDeploy {
     private static function copyContacts($deployment, $revision, array $cInfo) {
         if (self::$init === false) self::init();
         foreach ($cInfo as $contact => $cArray) {
-            if (($cArray['deployment'] == self::$m_commonrepo) && ($cArray['deployment'] == 'common')) continue;
-            if ($cArray['deployment'] == self::$m_commonrepo) continue;
-            foreach ($cArray as $key => $value) {
-                if (is_array($cArray[$key])) {
-                    $cArray[$key] = implode(',', $cArray[$key]);
-                }
-            }
+            if ($cArray['deployment'] != $deployment) continue;
+            unset($cArray['deployment']);
             RevDeploy::createDeploymentContact($deployment, $contact, $cArray, $revision);
         }
     }
@@ -177,14 +161,8 @@ class CopyDeploy {
     private static function copyHostTemplates($deployment, $revision, array $htInfo) {
         if (self::$init === false) self::init();
         foreach ($htInfo as $ht => $htArray) {
-            if (($htArray['deployment'] == self::$m_commonrepo) && ($htArray['deployment'] == 'common')) continue;
-            if ($htArray['deployment'] == self::$m_commonrepo) continue;
+            if ($htArray['deployment'] != $deployment) continue;
             unset($htArray['deployment']);
-            foreach ($htArray as $key => $value) {
-                if (is_array($htArray[$key])) {
-                    $htArray[$key] = implode(',', $htArray[$key]);
-                }
-            }
             RevDeploy::createDeploymentHostTemplate($deployment, $ht, $htArray, $revision);
         }
     }
@@ -192,8 +170,7 @@ class CopyDeploy {
     private static function copyHostGroups($deployment, $revision, array $hgInfo) {
         if (self::$init === false) self::init();
         foreach ($hgInfo as $hg => $hgArray) {
-            if (($hgArray['deployment'] == self::$m_commonrepo) && ($hgArray['deployment'] == 'common')) continue;
-            if ($hgArray['deployment'] == self::$m_commonrepo) continue;
+            if ($hgArray['deployment'] != $deployment) continue;
             unset($hgArray['deployment']);
             RevDeploy::createDeploymentHostGroup($deployment, $hg, $hgArray, $revision);
         }
@@ -202,14 +179,8 @@ class CopyDeploy {
     private static function copyServiceTemplates($deployment, $revision, array $stInfo) {
         if (self::$init === false) self::init();
         foreach ($stInfo as $st => $stArray) {
-            if (($stArray['deployment'] == self::$m_commonrepo) && ($stArray['deployment'] == 'common')) continue;
-            if ($stArray['deployment'] == self::$m_commonrepo) continue;
+            if ($stArray['deployment'] != $deployment) continue;
             unset($stArray['deployment']);
-            foreach ($stArray as $key => $value) {
-                if (is_array($stArray[$key])) {
-                    $stArray[$key] = implode(',', $stArray[$key]);
-                }
-            }
             RevDeploy::createDeploymentSvcTemplate($deployment, $st, $stArray, $revision);
         }
     }
@@ -217,14 +188,8 @@ class CopyDeploy {
     private static function copyServiceGroups($deployment, $revision, array $sgInfo) {
         if (self::$init === false) self::init();
         foreach ($sgInfo as $sg => $sgArray) {
-            if (($sgArray['deployment'] == self::$m_commonrepo) && ($sgArray['deployment'] == 'common')) continue;
-            if ($sgArray['deployment'] == self::$m_commonrepo) continue;
+            if ($sgArray['deployment'] != $deployment) continue;
             unset($sgArray['deployment']);
-            foreach ($sgArray as $key => $value) {
-                if (is_array($sgArray[$key])) {
-                    $sgArray[$key] = implode(',', $sgArray[$key]);
-                }
-            }
             RevDeploy::createDeploymentSvcGroup($deployment, $sg, $sgArray, $revision);
         }
     }
@@ -232,14 +197,8 @@ class CopyDeploy {
     private static function copyServiceDependencies($deployment, $revision, array $sdInfo) {
         if (self::$init === false) self::init();
         foreach ($sdInfo as $sd => $sdArray) {
-            if (($sdArray['deployment'] == self::$m_commonrepo) && ($sdArray['deployment'] == 'common')) continue;
-            if ($sdArray['deployment'] == self::$m_commonrepo) continue;
+            if ($sdArray['deployment'] != $deployment) continue;
             unset($sdArray['deployment']);
-            foreach ($sdArray as $key => $value) {
-                if (is_array($sdArray[$key])) {
-                    $sdArray[$key] = implode(',', $sdArray[$key]);
-                }
-            }
             RevDeploy::createDeploymentSvcDependency($deployment, $sd, $sdArray, $revision);
         }
     }
@@ -247,14 +206,8 @@ class CopyDeploy {
     private static function copyServiceEscalations($deployment, $revision, array $seInfo) {
         if (self::$init === false) self::init();
         foreach ($seInfo as $se =>$seArray) {
-            if (($seArray['deployment'] == self::$m_commonrepo) && ($seArray['deployment'] == 'common')) continue;
-            if ($seArray['deployment'] == self::$m_commonrepo) continue;
+            if ($seArray['deployment'] != $deployment) continue;
             unset($seArray['deployment']);
-            foreach ($seArray as $key => $value) {
-                if (is_array($seArray[$key])) {
-                    $seArray[$key] = implode(',', $seArray[$key]);
-                }
-            }
             RevDeploy::createDeploymentSvcEscalation($deployment, $se, $seArray, $revision);
         }
     }
@@ -262,14 +215,8 @@ class CopyDeploy {
     private static function copyServices($deployment, $revision, array $sInfo) {
         if (self::$init === false) self::init();
         foreach ($sInfo as $svc => $sArray) {
-            if (($sArray['deployment'] == self::$m_commonrepo) && ($sArray['deployment'] == 'common')) continue;
-            if ($sArray['deployment'] == self::$m_commonrepo) continue;
+            if ($sArray['deployment'] != $deployment) continue;
             unset($sArray['deployment']);
-            foreach ($sArray as $key => $value) {
-                if (is_array($sArray[$key])) {
-                    $sArray[$key] = implode(',', $sArray[$key]);
-                }
-            }
             RevDeploy::createDeploymentSvc($deployment, $svc, $sArray, $revision);
         }
     }
@@ -277,13 +224,18 @@ class CopyDeploy {
     private static function copyNodeTemplates($deployment, $revision, array $ntInfo) {
         if (self::$init === false) self::init();
         foreach ($ntInfo as $nt => $ntArray) {
-            if ((isset($ntArray['services'])) && (!empty($ntArray['services']))) {
-                $ntArray['services'] = implode(',', $ntArray['services']);
-            }
-            if ((isset($ntArray['nservices'])) && (!empty($ntArray['nservices']))) {
-                $ntArray['nservices'] = implode(',', $ntArray['nservices']);
-            }
+            if ($ntArray['deployment'] != $deployment) continue;
+            unset($ntArray['deployment']);
             RevDeploy::createDeploymentNodeTemplate($deployment, $nt, $ntArray, $revision);
+        }
+    }
+
+    private static function copyClusterCommands($deployment, $revision, array $ccInfo) {
+        if (self::$init === false) self::init();
+        foreach ($ccInfo as $cc => $ccArray) {
+            if ($ccArray['deployment'] != $deployment) continue;
+            unset($ccArray['deployment']);
+            RevDeploy::createDeploymentClusterCmd($deployment, $cc, $ccArray, $revision);
         }
     }
 
@@ -310,6 +262,7 @@ class CopyDeploy {
     private static function copyNRPECmds($deployment, $revision, array $nrpeCmds) {
         if (self::$init === false) self::init();
         foreach ($nrpeCmds as $nrpeCmd => $nrpeArray) {
+            unset($nrpeArray['deployment']);
             RevDeploy::createDeploymentNRPECmd($deployment, $nrpeCmd, $nrpeArray, $revision);
         }
     }
@@ -322,6 +275,8 @@ class CopyDeploy {
     private static function copyNRPEPlugins($deployment, $revision, array $nrpePlugins) {
         if (self::$init === false) self::init();
         foreach ($nrpePlugins as $plugin => $pArray) {
+            if ($pArray['deployment'] != $deployment) continue;
+            unset($pArray['deployment']);
             RevDeploy::createDeploymentNRPEPlugin($deployment, $plugin, $pArray, $revision);
         }
     }
@@ -334,6 +289,8 @@ class CopyDeploy {
     private static function copySupNRPEPlugins($deployment, $revision, $supnrpePlugins) {
         if (self::$init === false) self::init();
         foreach ($supnrpePlugins as $plugin => $pArray) {
+            if ($pArray['deployment'] != $deployment) continue;
+            unset($pArray['deployment']);
             RevDeploy::createDeploymentSupNRPEPlugin($deployment, $plugin, $pArray, $revision);
         }
     }
@@ -341,6 +298,8 @@ class CopyDeploy {
     private static function copyNagiosPlugins($deployment, $revision, array $nagiosPlugins) {
         if (self::$init === false) self::init();
         foreach ($nagiosPlugins as $plugin => $pArray) {
+            if ($pArray['deployment'] != $deployment) continue;
+            unset($pArray['deployment']);
             RevDeploy::createDeploymentNagiosPlugin($deployment, $plugin, $pArray, $revision);
         }
     }

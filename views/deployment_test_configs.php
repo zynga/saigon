@@ -50,18 +50,7 @@ $('.parentClass').click(function() {
             <tr>
                 <th style="width:30%;text-align:right;">Deployment:</th>
                 <td style="text-align:left"><?php echo $viewData->deployment?></td>
-            </tr>
-<?php
-if (($viewData->subdeployment !== false) && (!empty($viewData->subdeployment))) {
-?>
-            <tr>
-                <th style="width:30%;text-align:right;">Sub Deployment:</th>
-                <td style="text-align:left"><?php echo $viewData->subdeployment?></td>
-            </tr>
-<?php
-}
-?>
-            <tr>
+            </tr><tr>
                 <th style="width:30%;text-align:right;">Revision:</th>
                 <td style="text-align:left"><?php echo $viewData->revision?></td>
             </tr>

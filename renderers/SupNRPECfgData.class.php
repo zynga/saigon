@@ -56,6 +56,9 @@ class SupNRPECfgDataRenderer implements LoggerRendererObject
     {
         $supnrpecfgInfo = array();
         foreach ($testData->supnrpecfg as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($supnrpecfgInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -66,6 +69,9 @@ class SupNRPECfgDataRenderer implements LoggerRendererObject
         if (($testData->action == 'modify') || ($testData->action == 'delete')) {
             $oldsupnrpecfgInfo = array();
             foreach ($testData->oldsupnrpecfg as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldsupnrpecfgInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_sup_nrpe_cfg_info=[".implode(", ", $oldsupnrpecfgInfo)."]";

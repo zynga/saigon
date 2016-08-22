@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+
+key=AWS_ACCESS_KEY
+secret=AWS_SECRET_KEY
+s3cmd=/opt/s3cmd/s3cmd
+s3bucket=backups
+s3dir=saigon
+s3options="--no-progress"
+rediscli=`which redis-cli`
+cp=`which cp`;
+date=$(date +%Y-%d-%m)
+from=/mnt/redis/redis-6379/dump.rdb
+file=saigon-redis-dump-${date}.rdb
+to=/tmp/${file}
+
+# echo "${key} : ${secret} : ${date} : ${s3cmd} : ${s3dir} : ${rediscli} : ${cp} : ${from} : ${to}"
+
+# Save Redis Datastore to Disk
+${rediscli} save 2>&1 >/dev/null
+if [ "$?" != "0" ]; then
+  echo "Error Detected; Unable to properly backup redis datastore"
+  exit 1
+fi
+
+# Lets Copy our Backup around and rename it.
+${cp} ${from} ${to}
+if [ "$?" != "0" ]; then
+  echo "Error Detected; Unable to properly copy redis backup to temp location"
+  echo "From File: ${from} -> To File: ${to}"
+  exit 1
+fi
+
+# Lets Copy our Backup to S3
+${s3cmd} ${s3options} --access_key=${key} --secret_key=${secret} sync ${to} s3://${s3bucket}/${s3dir}/${file}
+if [ "$?" != "0" ]; then
+  echo "Error Detected; Unable to properly copy backup to s3 bucket"
+  echo "File: ${to} -> Location: s3://${s3bucket}/${s3dir}/${file}"
+  exit 1
+fi
+
+# Remove our backup
+rm -f ${to}
+
+exit

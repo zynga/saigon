@@ -25,7 +25,7 @@ class ContactTempController extends Controller {
                 case 'hostnotifperiod':
                     $contactInfo['host_notification_period'] = $value; break;
                 case 'hostnotifopts':
-                    $contactInfo['host_notification_options'] = implode(",", $value); break;
+                    $contactInfo['host_notification_options'] = $value; break;
                 case 'hostnotifcmd':
                     $contactInfo['host_notification_commands'] = $value; break;
                 case 'svcnotifenabled':
@@ -33,7 +33,7 @@ class ContactTempController extends Controller {
                 case 'svcnotifperiod':
                     $contactInfo['service_notification_period'] = $value; break;
                 case 'svcnotifopts':
-                    $contactInfo['service_notification_options'] = implode(",", $value); break;
+                    $contactInfo['service_notification_options'] = $value; break;
                 case 'svcnotifcmd':
                     $contactInfo['service_notification_commands'] = $value; break;
                 default:
@@ -46,7 +46,7 @@ class ContactTempController extends Controller {
             $viewData->contactInfo = $contactInfo;
             $viewData->contacttemplates = RevDeploy::getCommonMergedDeploymentContactTemplates($deployment, $modrevision);
             $viewData->notifycmds = RevDeploy::getCommonMergedDeploymentNotifyCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->action = $action;
             $viewData->deployment = $deployment;
             $this->sendResponse('contact_template_action_stage', $viewData);
@@ -57,7 +57,7 @@ class ContactTempController extends Controller {
             $viewData->contactInfo = $contactInfo;
             $viewData->contacttemplates = RevDeploy::getCommonMergedDeploymentContactTemplates($deployment, $modrevision);
             $viewData->notifycmds = RevDeploy::getCommonMergedDeploymentNotifyCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->action = $action;
             $viewData->deployment = $deployment;
             $this->sendResponse('contact_template_action_stage', $viewData);
@@ -71,7 +71,7 @@ class ContactTempController extends Controller {
                     $viewData->contactInfo = $contactInfo;
                     $viewData->contacttemplates = RevDeploy::getCommonMergedDeploymentContactTemplates($deployment, $modrevision);
                     $viewData->notifycmds = RevDeploy::getCommonMergedDeploymentNotifyCommands($deployment, $modrevision);
-                    $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+                    $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
                     $viewData->action = $action;
                     $viewData->deployment = $deployment;
                     $this->sendResponse('contact_template_action_stage', $viewData);
@@ -99,7 +99,7 @@ class ContactTempController extends Controller {
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->contacttemplates = RevDeploy::getCommonMergedDeploymentContactTemplates($deployment, $modrevision);
         $viewData->notifycmds = RevDeploy::getCommonMergedDeploymentNotifyCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->action = 'add_write';
         $this->sendResponse('contact_template_action_stage', $viewData);
@@ -108,7 +108,7 @@ class ContactTempController extends Controller {
     public function add_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('contact_template_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -121,7 +121,7 @@ class ContactTempController extends Controller {
             $viewData->deployment = $deployment;
             $viewData->contacttemplates = RevDeploy::getCommonMergedDeploymentContactTemplates($deployment, $modrevision);
             $viewData->notifycmds = RevDeploy::getCommonMergedDeploymentNotifyCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contactInfo = $contactInfo;
             $this->sendResponse('contact_template_action_stage', $viewData);
         }
@@ -146,7 +146,7 @@ class ContactTempController extends Controller {
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->contacttemplates = RevDeploy::getCommonMergedDeploymentContactTemplates($deployment, $modrevision);
         $viewData->notifycmds = RevDeploy::getCommonMergedDeploymentNotifyCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->contactInfo = RevDeploy::getDeploymentContactTemplate($deployment, $contactTemplate, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->contacttemplate = $contactTemplate;
@@ -158,7 +158,7 @@ class ContactTempController extends Controller {
     public function modify_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('contact_template_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
@@ -194,7 +194,7 @@ class ContactTempController extends Controller {
     public function del_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('contact_template_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $contactTemplate = $this->getParam('contacttemp');
         if ($contactTemplate === false) {
@@ -221,7 +221,7 @@ class ContactTempController extends Controller {
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->contacttemplates = RevDeploy::getCommonMergedDeploymentContactTemplates($deployment, $modrevision);
         $viewData->notifycmds = RevDeploy::getCommonMergedDeploymentNotifyCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
         $viewData->contactInfo = RevDeploy::getDeploymentContactTemplate($deployment, $contactTemplate, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->contacttemplate = $contactTemplate;
@@ -239,12 +239,10 @@ class ContactTempController extends Controller {
             $this->sendError('generic_error', $viewData);
         }
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $commonrevision = RevDeploy::getDeploymentRev($commonRepo);
         $viewData->contacttemplates = RevDeploy::getCommonMergedDeploymentContactTemplates($deployment, $modrevision);
         $viewData->notifycmds = RevDeploy::getCommonMergedDeploymentNotifyCommands($deployment, $modrevision);
-        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
-        $viewData->contactInfo = RevDeploy::getDeploymentContactTemplate($commonRepo, $contactTemplate, $commonrevision);
+        $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
+        $viewData->contactInfo = RevDeploy::getCommonMergedDeploymentContactTemplate($deployment, $contactTemplate, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->contacttemplate = $contactTemplate;
         $viewData->action = 'copy_write';
@@ -254,7 +252,7 @@ class ContactTempController extends Controller {
     public function copy_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('contact_template_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $contactName = $this->getParam('contactName');
@@ -266,7 +264,7 @@ class ContactTempController extends Controller {
             $viewData->deployment = $deployment;
             $viewData->contacttemplates = RevDeploy::getCommonMergedDeploymentContactTemplates($deployment, $modrevision);
             $viewData->notifycmds = RevDeploy::getCommonMergedDeploymentNotifyCommands($deployment, $modrevision);
-            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiods($deployment, $modrevision);
+            $viewData->timeperiods = RevDeploy::getCommonMergedDeploymentTimeperiodsMetaInfo($deployment, $modrevision);
             $viewData->contactInfo = $contactInfo;
             $this->sendResponse('contact_template_action_stage', $viewData);
         }

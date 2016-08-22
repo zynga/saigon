@@ -42,17 +42,19 @@ if ((isset($viewData->contacts)) && (!empty($viewData->contacts))) {
 <?php
             } else {
 ?>
-                <a class="deployBtn" title="Modify" href="action.php?controller=contact&action=modify_stage&deployment=<?php echo $deployment?>&contactName=<?php echo $contact?>">Modify</a>
                 <a class="deployBtn" title="Copy" href="action.php?controller=contact&action=copy_stage&deployment=<?php echo $deployment?>&contactName=<?php echo $contact?>">Copy</a>
                 <a class="deployBtn" title="Copy To" href="action.php?controller=contact&action=copy_to_stage&deployment=<?php echo $deployment?>&contactName=<?php echo $contact?>">Copy To</a>
+                <div class="divCacGroup"></div>
+                <a class="deployBtn" title="Modify" href="action.php?controller=contact&action=modify_stage&deployment=<?php echo $deployment?>&contactName=<?php echo $contact?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=contact&action=del_stage&deployment=<?php echo $deployment?>&contactName=<?php echo $contact?>">Delete</a>
 <?php
             }
         } else {
 ?>
-                <a class="deployBtn" title="Modify" href="action.php?controller=contact&action=modify_stage&deployment=<?php echo $deployment?>&contactName=<?php echo $contact?>">Modify</a>
                 <a class="deployBtn" title="Copy" href="action.php?controller=contact&action=copy_stage&deployment=<?php echo $deployment?>&contactName=<?php echo $contact?>">Copy</a>
                 <a class="deployBtn" title="Copy To" href="action.php?controller=contact&action=copy_to_stage&deployment=<?php echo $deployment?>&contactName=<?php echo $contact?>">Copy To</a>
+                <div class="divCacGroup"></div>
+                <a class="deployBtn" title="Modify" href="action.php?controller=contact&action=modify_stage&deployment=<?php echo $deployment?>&contactName=<?php echo $contact?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=contact&action=del_stage&deployment=<?php echo $deployment?>&contactName=<?php echo $contact?>">Delete</a>
 <?php
         }

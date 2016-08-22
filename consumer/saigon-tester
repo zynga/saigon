@@ -44,25 +44,20 @@ function sighandler($signal)
  * 
  * @param mixed $deployment    deployment we are building for test purposes
  * @param mixed $revision      revision we are building for test purposes
- * @param mixed $subdeployment subdeployment we maybe processing
  *
  * @access public
  * @return void
  */
-function testBuild($deployment, $revision, $subdeployment = false, $shardposition)
+function testBuild($deployment, $revision, $shardposition)
 {
     $starttime = time();
-    if (($subdeployment !== false) && (!empty($subdeployment))) {
-        NagCreate::setSubDeployment($subdeployment);
-    }
     $buildReturn = NagCreate::buildDeployment($deployment, $revision, false, true, $shardposition);
     if ($buildReturn !== true) {
         $buildOutput['starttime'] = $starttime;
         $buildOutput['timestamp'] = time();
         $buildOutput['output'] = base64_encode($buildReturn);
         $buildOutput['exitcode'] = 1;
-        $buildOutput['subdeployment'] = $subdeployment;
-        NagTester::setDeploymentTestInfo($deployment, $subdeployment, $revision, $buildOutput);
+        RevDeploy::setConsumerDeploymentInfo($deployment, $revision, 'test', $buildOutput);
         unset($buildOutput, $buildReturn);
     }
     else {
@@ -70,8 +65,7 @@ function testBuild($deployment, $revision, $subdeployment = false, $shardpositio
         $testReturn['starttime'] = $starttime;
         $testReturn['timestamp'] = time();
         $testReturn['output'] = base64_encode(implode("\n", $testReturn['output']));
-        $testReturn['subdeployment'] = $subdeployment;
-        NagTester::setDeploymentTestInfo($deployment, $subdeployment, $revision, $testReturn);
+        RevDeploy::setConsumerDeploymentInfo($deployment, $revision, 'test', $testReturn);
         unset($testReturn, $buildReturn);
     }
     unset($starttime);
@@ -83,25 +77,20 @@ function testBuild($deployment, $revision, $subdeployment = false, $shardpositio
  * 
  * @param mixed $deployment    deployment we are building configs for
  * @param mixed $revision      revision of configs we are building
- * @param mixed $subdeployment subdeployment we may be processing
  *
  * @access public
  * @return void
  */
-function showBuild($deployment, $revision, $subdeployment = false, $shardposition = false)
+function showBuild($deployment, $revision, $shardposition = false)
 {
     $starttime = time();
-    if (($subdeployment !== false) && (!empty($subdeployment))) {
-        NagCreate::setSubDeployment($subdeployment);
-    }
     $buildReturn = NagCreate::buildDeployment($deployment, $revision, false, true, $shardposition);
     if ($buildReturn !== true) {
         $buildOutput['starttime'] = $starttime;
         $buildOutput['timestamp'] = time();
         $buildOutput['output'] = $buildReturn;
         $buildOutput['exitcode'] = 1;
-        $buildOutput['subdeployment'] = $subdeployment;
-        NagTester::setDeploymentBuildInfo($deployment, $subdeployment, $revision, $buildOutput);
+        RevDeploy::setConsumerDeploymentInfo($deployment, $revision, 'build', $buildOutput);
         unset($buildOutput, $buildReturn);
     }
     else {
@@ -109,8 +98,7 @@ function showBuild($deployment, $revision, $subdeployment = false, $shardpositio
         $configOutput['starttime'] = $starttime;
         $configOutput['timestamp'] = time();
         $configOutput['exitcode'] = 0;
-        $configOutput['subdeployment'] = $subdeployment;
-        NagTester::setDeploymentBuildInfo($deployment, $subdeployment, $revision, $configOutput);
+        RevDeploy::setConsumerDeploymentInfo($deployment, $revision, 'build', $configOutput);
         unset($configOutput, $buildReturn);
     }
     unset($starttime);
@@ -123,19 +111,15 @@ function showBuild($deployment, $revision, $subdeployment = false, $shardpositio
  * @param mixed $deployment    deployment we are diffing
  * @param mixed $fromrev       from revision we are diffing
  * @param mixed $torev         to revision we are diffing
- * @param mixed $subdeployment subdeployment we may be told to build
  *
  * @access public
  * @return void
  */
-function diffBuild($deployment, $fromrev, $torev, $subdeployment = false, $shardposition = false)
+function diffBuild($deployment, $fromrev, $torev, $shardposition = false)
 {
     $results = array();
     $starttime = time();
-    if (($subdeployment !== false) && (!empty($subdeployment))) {
-        NagCreate::setSubDeployment($subdeployment);
-    }
-    $return = NagDiff::buildDiffRevisions($deployment, $subdeployment, $fromrev, $torev, $shardposition);
+    $return = NagDiff::buildDiffRevisions($deployment, $fromrev, $torev, $shardposition);
     if ($return === false) {
         $results['output'] = base64_encode(NagDiff::getOutput());
         $results['starttime'] = $starttime;
@@ -143,8 +127,7 @@ function diffBuild($deployment, $fromrev, $torev, $subdeployment = false, $shard
         $results['fromrev'] = $fromrev;
         $results['torev'] = $torev;
         $results['status'] = 'failed';
-        $results['subdeployment'] = $subdeployment;
-        NagTester::setDeploymentDiffInfo($deployment, $subdeployment, $results);
+        RevDeploy::setConsumerDeploymentInfo($deployment, false, 'diff', $results);
     }
     else {
         $results['configs'] = json_encode(NagDiff::getResults());
@@ -153,12 +136,19 @@ function diffBuild($deployment, $fromrev, $torev, $subdeployment = false, $shard
         $results['fromrev'] = $fromrev;
         $results['torev'] = $torev;
         $results['status'] = 'success';
-        $results['subdeployment'] = $subdeployment;
-        NagTester::setDeploymentDiffInfo($deployment, $subdeployment, $results);
+        RevDeploy::setConsumerDeploymentInfo($deployment, false, 'diff', $results);
     }
     unset($starttime, $results, $return);
 }
 
+/**
+ * hostaudit
+ *
+ * @param mixed $deployment deployment we are checking for host and service warnings
+ *
+ * @access public
+ * @return void
+ */
 function hostaudit($deployment)
 {
     $revision = RevDeploy::getDeploymentRev($deployment);
@@ -202,7 +192,33 @@ function hostaudit($deployment)
                 array_push($results['services_without_contacts'][$key]['hosts'], $matches[2]);
             }
         }
-        NagTester::setDeploymentHostAuditInfo($deployment, json_encode($results));
+        RevDeploy::setConsumerDeploymentInfo($deployment, false, 'hostaudit', $results);
+        unset($testReturn, $buildReturn);
+    }
+    return;
+}
+
+/**
+ * verifyBuild 
+ * 
+ * @param mixed $deployment    deployment we are building for verification purposes
+ * @param mixed $revision      revision we are building for verification purposes
+ *
+ * @access public
+ * @return void
+ */
+function verifyBuild($deployment, $revision)
+{
+    $buildReturn = NagCreate::buildDeployment($deployment, $revision, false, true, false);
+    if ($buildReturn !== true) {
+        Chat::messageByDeployment($deployment, "Verification Build: Failed to build configs for Deployment: $deployment", 'red', true);
+        unset($buildReturn);
+    }
+    else {
+        $testReturn = NagCreate::testDeployment($deployment);
+        if ($testReturn['exitcode'] != 0) {
+            Chat::messageByDeployment($deployment, "Verification Build: Configs failed to test properly for Deployment: $deployment", 'red', true);
+        }
         unset($testReturn, $buildReturn);
     }
     return;
@@ -233,32 +249,45 @@ while ($run) {
     $data = $job->getData();
     $jsonObj = json_decode($data);
     if ($jsonObj->type == 'test') {
-        NagRedis::init(true);
-        $lockReturn = NagTester::setDeploymentTestLock($jsonObj->deployment, $jsonObj->subdeployment, $jsonObj->revision);
+        $lockReturn =
+            RevDeploy::createConsumerDeploymentLock(
+                $jsonObj->deployment, $jsonObj->revision, 'test'
+            );
         if ($lockReturn !== false) {
-            testBuild($jsonObj->deployment, $jsonObj->revision, $jsonObj->subdeployment, $jsonObj->shard);
+            testBuild($jsonObj->deployment, $jsonObj->revision, $jsonObj->shard);
             NagPhean::delJob($job);
-            NagTester::deleteDeploymentTestLock($jsonObj->deployment, $jsonObj->subdeployment, $jsonObj->revision);
+            RevDeploy::deleteConsumerDeploymentLock(
+                $jsonObj->deployment, $jsonObj->revision, 'test'
+            );
         }
         unset($lockReturn);
     }
     elseif ($jsonObj->type == 'build') {
-        NagRedis::init(true);
-        $lockReturn = NagTester::setDeploymentBuildLock($jsonObj->deployment, $jsonObj->subdeployment, $jsonObj->revision);
+        $lockReturn =
+            RevDeploy::createConsumerDeploymentLock(
+                $jsonObj->deployment, $jsonObj->revision, 'build'
+            );
         if ($lockReturn !== false) {
-            showBuild($jsonObj->deployment, $jsonObj->revision, $jsonObj->subdeployment, $jsonObj->shard);
+            showBuild($jsonObj->deployment, $jsonObj->revision, $jsonObj->shard);
             NagPhean::delJob($job);
-            NagTester::deleteDeploymentBuildLock($jsonObj->deployment, $jsonObj->subdeployment, $jsonObj->revision);
+            RevDeploy::deleteConsumerDeploymentLock(
+                $jsonObj->deployment, $jsonObj->revision, 'build'
+            );
         }
         unset($lockReturn);
     }
     elseif ($jsonObj->type == 'diff') {
-        $lockReturn = NagTester::setDeploymentDiffLock($jsonObj->deployment, $jsonObj->subdeployment);
+        $lockReturn =
+            RevDeploy::createConsumerDeploymentLock($jsonObj->deployment, false, 'diff');
         if ($lockReturn !== false) {
-            diffBuild($jsonObj->deployment, $jsonObj->fromrev, $jsonObj->torev, $jsonObj->subdeployment, $jsonObj->shard);
+            diffBuild($jsonObj->deployment, $jsonObj->fromrev, $jsonObj->torev, $jsonObj->shard);
             NagPhean::delJob($job);
-            NagTester::deleteDeploymentDiffLock($jsonObj->deployment, $jsonObj->subdeployment);
+            RevDeploy::deleteConsumerDeploymentLock($jsonObj->deployment, false, 'diff');
         }
+    }
+    elseif ($jsonObj->type == 'verify') {
+        verifyBuild($jsonObj->deployment, $jsonObj->revision);
+        NagPhean::delJob($job);
     }
     elseif ($jsonObj->type == 'hostaudit') {
         // Not setting a lock, since this is a background job and doesn't return directly too the user...

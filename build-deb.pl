@@ -90,17 +90,35 @@ sub build_core {
     pathmk("_debian/$o_root/audit","_debian/$o_root/log","_debian/$o_root/misc");
     pathmk("_debian/$o_root/include","_debian/$o_root/lib","_debian/$o_root/modules");
     pathmk("_debian/$o_root/renderers","_debian/$o_root/conf");
+    pathmk("_debian/$o_root/consumer");
     fcopy("composer.lock", "_debian/$o_root/composer.lock");
     fcopy("composer.json", "_debian/$o_root/composer.json");
     fcopy("misc/testing-nagios.cfg", "_debian/$o_root/misc/testing-nagios.cfg");
     fcopy("conf/hostmodules.inc.php", "_debian/$o_root/conf/hostmodules.inc.php");
-    fcopy("conf/role.inc.php", "_debian/$o_root/conf/role.inc.php");
+    open(FILE, "<", "conf/role.inc.php");
+    my @lines = <FILE>;
+    close(FILE);
+    my @newlines;
+    foreach my $line (@lines) {
+        $line =~ s/'Dev'/'Prod'/;
+        push(@newlines, $line);
+    }
+    open(FILE, ">", "_debian/$o_root/conf/role.inc.php");
+    print FILE @newlines;
+    close(FILE);
     fcopy("conf/version.inc.php", "_debian/$o_root/conf/version.inc.php");
     fcopy("conf/cdc_creds.ini", "_debian/$o_root/conf/cdc_creds.ini");
     fcopy("conf/nrperpm.inc.php", "_debian/$o_root/conf/nrperpm.inc.php");
+    fcopy("conf/dist.inc.php", "_debian/$o_root/conf/dist.inc.php");
+    fcopy("conf/thirdpartymodules.inc.php", "_debian/$o_root/conf/thirdpartymodules.inc.php");
+    fcopy("conf/datastoremodules.inc.php", "_debian/$o_root/conf/datastoremodules.inc.php");
+    fcopy("consumer/saigon-backup-script", "_debian/$o_root/consumer/saigon-backup-script");
+    fcopy("conf/saigon-data-migrator.inc.php", "_debian/$o_root/conf/saigon-data-migrator.inc.php");
+    fcopy("consumer/saigon-data-migrator", "_debian/$o_root/consumer/saigon-data-migrator");
     dircopy("lib/*", "_debian/$o_root/lib/");
     dircopy("modules/*", "_debian/$o_root/modules/");
     dircopy("renderers/*", "_debian/$o_root/renderers/");
+    dircopy("include/*", "_debian/$o_root/include/");
     createdebianfiles($version, 'saigon');
     qx{fakeroot dpkg -b _debian saigon-$version.deb};
     pathrmdir("_debian");
@@ -113,6 +131,7 @@ sub build_web {
     pathmk("_debian/$o_root/controllers","_debian/$o_root/views","_debian/$o_root/www");
     pathmk("_debian/$o_root/api","_debian/$o_root/routes");
     fcopy("conf/saigon.inc.php", "_debian/$o_root/conf/saigon.inc.php");
+    fcopy("misc/saigon-ldap.conf", "_debian/$o_root/misc/saigon-ldap.conf");
     fcopy("misc/saigon-web-apache.conf", "_debian/$o_root/misc/saigon-web-apache.conf");
     fcopy("misc/saigon-web-nginx.conf", "_debian/$o_root/misc/saigon-web-nginx.conf");
     fcopy("misc/saigon-api-apache.conf", "_debian/$o_root/misc/saigon-api-apache.conf");
@@ -136,7 +155,7 @@ sub build_nagiosbuilder {
     fcopy("conf/saigon-nagios-builder.inc.php", "_debian/$o_root/conf/saigon-nagios-builder.inc.php");
     fcopy("conf/sharding.inc.php", "_debian/$o_root/conf/sharding.inc.php");
     fcopy("conf/deployment.inc.php", "_debian/$o_root/conf/deployment.inc.php");
-    fcopy("misc/lograte/saigon-nagios-builder", "_debian/etc/logrotate.d/saigon-nagios-builder");
+    fcopy("misc/logrotate/saigon-nagios-builder", "_debian/etc/logrotate.d/saigon-nagios-builder");
     fcopy("misc/cronjobs/create-saigon-builder-crontab", "_debian/$o_root/misc/cronjobs/create-saigon-builder-crontab");
     chmod oct("0755"), "_debian/$o_root/misc/cronjobs/create-saigon-builder-crontab";
     fcopy("consumer/saigon-nagios-builder", "_debian/$o_root/consumer/saigon-nagios-builder");
@@ -238,7 +257,7 @@ sub createcontrol {
     print $fh "Section: unknown\n";
     print $fh "Priority: optional\n";
     print $fh "Architecture: all\n";
-    print $fh "Maintainer: Matt West <mwest\@zynga.com>\n";
+    print $fh "Maintainer: Matt West <mwest\@pinterest.com>\n";
     if ($package eq 'saigon') {
         print $fh "Description: Saigon is a product designed in house at Zynga to help configure and\n";
         print $fh " deploy configurations to Nagios master nodes, and NRPE Clients so configs can\n";
@@ -251,7 +270,7 @@ sub createcontrol {
         print $fh " deploy configurations to Nagios master nodes, and NRPE Clients so configs can\n";
         print $fh " be managed centrally and built with best practices.\n";
         print $fh " This is the web package, which contains the api and ui\n";
-        print $fh "Depends: saigon, php5-ldap, libapache2-mod-php5\n";
+        print $fh "Depends: saigon (>= $version), php5-ldap, libapache2-mod-php5\n";
     }
     elsif ($package eq 'saigon-nagios-builder') {
         print $fh "Description: Saigon is a product designed in house at Zynga to help configure and\n";
@@ -259,7 +278,7 @@ sub createcontrol {
         print $fh " be managed centrally and built with best practices.\n";
         print $fh " This is the Nagios configuration file builder package, which builds the\n";
         print $fh " Nagios configuration files on your Nagios master(s)\n";
-        print $fh "Depends: saigon, php5-cli, nagios3\n";
+        print $fh "Depends: saigon (>= $version), php5-cli, nagios3\n";
     }
     elsif ($package eq 'saigon-nagiosplugin-builder') {
         print $fh "Description: Saigon is a product designed in house at Zynga to help configure and\n";
@@ -267,8 +286,7 @@ sub createcontrol {
         print $fh " be managed centrally and built with best practices.\n";
         print $fh " This provides the Saigon NRPE builder which fetches the nagios plugins for\n";
         print $fh " the tenants which have placed a .ini file in the include directory.\n";
-        print $fh "Depends: libconfig-auto-perl, libconfig-inifiles-perl, libdigest-md5-file-perl,\n";
-        print $fh " libjson-perl, libio-interface-perl\n";
+        print $fh "Depends: libconfig-auto-perl, libconfig-inifiles-perl, libdigest-md5-file-perl, libjson-perl, libio-interface-perl\n";
     }
     elsif ($package eq 'saigon-nrpe-builder') {
         print $fh "Description: Saigon is a product designed in house at Zynga to help configure and\n";
@@ -276,8 +294,7 @@ sub createcontrol {
         print $fh " be managed centrally and built with best practices.\n";
         print $fh " This provides the builder which fetches the nrpe configuration files and\n";
         print $fh " plugins for the tenants which have placed a .ini file in the include directory\n";
-        print $fh "Depends: libconfig-auto-perl, libconfig-inifiles-perl, libdigest-md5-file-perl,\n";
-        print $fh " libjson-perl, libio-interface-perl, nagios-nrpe-server, nagios-plugins\n";
+        print $fh "Depends: libconfig-auto-perl, libconfig-inifiles-perl, libdigest-md5-file-perl, libjson-perl, libio-interface-perl\n";
     }
     elsif ($package eq 'saigon-modgearman-builder') {
         print $fh "Description: Saigon is a product designed in house at Zynga to help configure and\n";
@@ -285,8 +302,7 @@ sub createcontrol {
         print $fh " be managed centrally and built with best practices.\n";
         print $fh " This provides the builder which fetches the modgearman configuration files\n";
         print $fh " for the nagios machines participating in a cluster\n";
-        print $fh "Depends: libconfig-auto-perl, libconfig-inifiles-perl, libdigest-md5-file-perl,\n";
-        print $fh " libjson-perl, libio-interface-perl\n";
+        print $fh "Depends: libconfig-auto-perl, libconfig-inifiles-perl, libdigest-md5-file-perl, libjson-perl, libio-interface-perl\n";
     }
     elsif ($package eq 'saigon-test-builder') {
         print $fh "Description: Saigon is a product designed in house at Zynga to help configure and\n";
@@ -294,7 +310,7 @@ sub createcontrol {
         print $fh " be managed centrally and built with best practices.\n";
         print $fh " This is the test builder package, which contains the asynchronous consumer\n";
         print $fh " for testing, showing, and diffing versions of Nagios configuration files\n";
-        print $fh "Depends: saigon, php5-cli, monit, nagios3-core\n";
+        print $fh "Depends: saigon (>= $version), php5-cli, monit, nagios3-core\n";
     }
     close $fh;
 }
@@ -311,7 +327,9 @@ sub createpreandpost {
         print $fh "#!/bin/sh\n#\n\n";
         print $fh "set -e\n";
         print $fh "if [ \"\$1\" = \"configure\" ]; then\n";
-        print $fh " /$o_root/misc/cronjobs/create-saigon-builder-crontab\n";
+        print $fh " if [ ! -f /etc/cron.d/saigon-nagios-builder ]; then\n";
+        print $fh "  /$o_root/misc/cronjobs/create-saigon-builder-crontab\n";
+        print $fh " fi\n";
         print $fh "fi\n";
         close $fh;
         open $fh, ">", "_debian/DEBIAN/prerm" or
@@ -319,7 +337,9 @@ sub createpreandpost {
         print $fh "#!/bin/sh\n#\n\n";
         print $fh "set -e\n";
         print $fh "if [ \"\$1\" = \"remove\" ]; then\n";
-        print $fh " rm -f /etc/cron.d/saigon-nagios-builder\n";
+        print $fh " if [ -f /etc/cron.d/saigon-nagios-builder ]; then\n";
+        print $fh "  rm -f /etc/cron.d/saigon-nagios-builder\n";
+        print $fh " fi\n";
         print $fh "fi\n";
         close $fh;
     }
@@ -329,7 +349,9 @@ sub createpreandpost {
         print $fh "#!/bin/sh\n#\n\n";
         print $fh "set -e\n";
         print $fh "if [ \"\$1\" = \"configure\" ]; then\n";
-        print $fh " /$o_root/misc/cronjobs/create-saigon-nagiosplugin-builder-crontab\n";
+        print $fh " if [ ! -f /etc/cron.d/saigon-nagiosplugin-builder ]; then\n";
+        print $fh "  /$o_root/misc/cronjobs/create-saigon-nagiosplugin-builder-crontab\n";
+        print $fh " fi\n";
         print $fh "fi\n";
         close $fh;
         open $fh, ">", "_debian/DEBIAN/prerm" or
@@ -337,7 +359,9 @@ sub createpreandpost {
         print $fh "#!/bin/sh\n#\n\n";
         print $fh "set -e\n";
         print $fh "if [ \"\$1\" = \"remove\" ]; then\n";
-        print $fh " rm -f /etc/cron.d/saigon-nagiosplugin-builder\n";
+        print $fh " if [ -f /etc/cron.d/saigon-nagiosplugin-builder ]; then\n";
+        print $fh "  rm -f /etc/cron.d/saigon-nagiosplugin-builder\n";
+        print $fh " fi\n";
         print $fh "fi\n";
         close $fh;
     }
@@ -347,7 +371,9 @@ sub createpreandpost {
         print $fh "#!/bin/sh\n#\n\n";
         print $fh "set -e\n";
         print $fh "if [ \"\$1\" = \"configure\" ]; then\n";
-        print $fh " /$o_root/misc/cronjobs/create-saigon-nrpe-builder-crontab\n";
+        print $fh " if [ ! -f /etc/cron.d/saigon-nrpe-builder ]; then \n";
+        print $fh "  /$o_root/misc/cronjobs/create-saigon-nrpe-builder-crontab\n";
+        print $fh " fi\n";
         print $fh "fi\n";
         close $fh;
         open $fh, ">", "_debian/DEBIAN/prerm" or
@@ -355,7 +381,9 @@ sub createpreandpost {
         print $fh "#!/bin/sh\n#\n\n";
         print $fh "set -e\n";
         print $fh "if [ \"\$1\" = \"remove\" ]; then\n";
-        print $fh " rm -f /etc/cron.d/saigon-nrpe-builder\n";
+        print $fh " if [ -f /etc/cron.d/saigon-nrpe-builder ]; then\n";
+        print $fh "  rm -f /etc/cron.d/saigon-nrpe-builder\n";
+        print $fh " fi\n";
         print $fh "fi\n";
         close $fh;
     }
@@ -365,7 +393,9 @@ sub createpreandpost {
         print $fh "#!/bin/sh\n#\n\n";
         print $fh "set -e\n";
         print $fh "if [ \"\$1\" = \"configure\" ]; then\n";
-        print $fh " /$o_root/misc/cronjobs/create-saigon-modgearman-builder-crontab\n";
+        print $fh " if [ ! -f /etc/cron.d/saigon-modgearman-builder ]; then\n";
+        print $fh "  /$o_root/misc/cronjobs/create-saigon-modgearman-builder-crontab\n";
+        print $fh " fi\n";
         print $fh "fi\n";
         close $fh;
         open $fh, ">", "_debian/DEBIAN/prerm" or
@@ -373,7 +403,9 @@ sub createpreandpost {
         print $fh "#!/bin/sh\n#\n\n";
         print $fh "set -e\n";
         print $fh "if [ \"\$1\" = \"remove\" ]; then\n";
-        print $fh " rm -f /etc/cron.d/saigon-modgearman-builder\n";
+        print $fh " if [ -f /etc/cron.d/saigon-modgearman-builder ]; then\n";
+        print $fh "  rm -f /etc/cron.d/saigon-modgearman-builder\n";
+        print $fh " fi\n";
         print $fh "fi\n";
         close $fh;
     }
@@ -382,16 +414,15 @@ sub createpreandpost {
             die "Unable to open file _debian/DEBIAN/postinst :: $!";
         print $fh "#!/bin/sh\n#\n\n";
         print $fh "set -e\n";
-        print $fh "if [ \"\$1\" = \"configure\" ]; then\n";
-        print $fh " ln -s /$o_root/misc/saigon-tester.monitrc /etc/monit/conf.d/saigon-tester\n";
-        print $fh "fi\n";
         close $fh;
         open $fh, ">", "_debian/DEBIAN/prerm" or
             die "Unable to open file _debian/DEBIAN/prerm :: $!";
         print $fh "#!/bin/sh\n#\n\n";
         print $fh "set -e\n";
         print $fh "if [ \"\$1\" = \"remove\" ]; then\n";
-        print $fh " rm -f /etc/monit/conf.d/saigon-tester\n";
+        print $fh " if [ -f /etc/monit/conf.d/saigon-tester ]; then\n";
+        print $fh "  rm -f /etc/monit/conf.d/saigon-tester\n";
+        print $fh " fi\n";
         print $fh "fi\n";
         close $fh;
     }

@@ -10,9 +10,19 @@
  * Host Module Information
  **/
 
-/* Define Host API Interface Modules */
-define('DEPLOYMENT_MODULES', 'CMDBDatacenters,CMDBDeployments,AWSEC2');
-define('INPUT_MODULES', 'CMDBGlobs,CMDBRSDeployments,CMDBRSServerArrays,RightScale,AWSEC2');
+/**
+ * Define Host API Interface Modules
+ *
+ * Available DEPLOYMENT_MODULES: CDCRouterVMs, CMDBDatacenters, CMDBDeployments, CMDBParentChild,
+ *                               CMDBRSDeployments, CMDBRSServerArrays, PCMDBDeployments,
+ *                               PCMDBNodepools, PCMDBProductAreas, PCMDBRegions,
+ *                               PCMDBServiceMappings, RightScale, ZSBDeployments
+ *
+ * Available INPUT_MODULES: CMDBDBAGlobs, CMDBDNGlobs, CMDBGlobs, ConsulGlob, PCMDBGlob, ZSBGlobs
+ *
+ **/
+define('DEPLOYMENT_MODULES', '');
+define('INPUT_MODULES', '');
 
 /* CMDB Auth Info / Library Requirements */
 define('CMDB_USER', 'user');
@@ -26,4 +36,7 @@ define('ZSB_LOC_PREFIX', 'ZSB');
 define('RS_LOC_PREFIX', 'RS');
 define('RS_BASE_APIURL', "https://my.rightscale.com/api");
 define('RS_REGION_MAP', "shortname:api_account_number:api_account_key");
-
+/* Pinterest CMDB Info */
+define('PCMDB_URL', 'https://some.domain.com/');
+/* Consul URL Info */
+define('CONSUL_URL', 'http://localhost:port');

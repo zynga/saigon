@@ -41,7 +41,7 @@ foreach ($viewData->revisions as $rev => $revArray) {
                 <td style="text-align:left;"><?php echo $revArray['users']?></td>
             </tr><tr>
                 <th style="width:30%;text-align:right;">Change Time:</th>
-                <td style="text-align:left;"><?php echo $revArray['revtime']?></td>
+                <td style="text-align:left;"><?php echo str_replace('+0000', 'GMT', gmdate('r', $revArray['revtime']))?></td>
             </tr><tr>
                 <th style="width:30%;text-align:right;">Change Note:</th>
                 <td style="text-align:left;"><?php echo $revArray['revnote']?></td>
@@ -52,7 +52,6 @@ foreach ($viewData->revisions as $rev => $revArray) {
 }
 ?>
 </div>
-
 <?php
 require HTML_FOOTER;
 

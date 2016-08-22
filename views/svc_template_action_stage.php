@@ -18,7 +18,7 @@ $svcAlias = isset($viewData->svcInfo['alias'])?$viewData->svcInfo['alias']:'';
 $svcUse = isset($viewData->svcInfo['use'])?$viewData->svcInfo['use']:'';
 
 $svcChkCommand = isset($viewData->svcInfo['check_command'])?$viewData->svcInfo['check_command']:'';
-$svcServiceGroup = isset($viewData->svcInfo['servicegroups'])?$viewData->svcInfo['servicegroups']:'';
+$svcServiceGroup = isset($viewData->svcInfo['servicegroups'])?$viewData->svcInfo['servicegroups']:array();
 $svcInitState = isset($viewData->svcInfo['initial_state'])?$viewData->svcInfo['initial_state']:'';
 $svcMaxChkAtts = isset($viewData->svcInfo['max_check_attempts'])?$viewData->svcInfo['max_check_attempts']:'';
 $svcCheckInt = isset($viewData->svcInfo['check_interval'])?$viewData->svcInfo['check_interval']:'';
@@ -192,7 +192,6 @@ $(function() {
         .multiselect({
             selectedList: 1,
             noneSelectedText: "Select Service Group",
-            multiple: false,
         }).multiselectfilter();
 });
 </script>
@@ -633,7 +632,6 @@ else if (preg_match("/^1$/", $svcPsvChks)) {
                         <th style="width:30%;text-align:right;">Contacts:</th>
                         <td style="text-align:left;">
                             <select id="contacts" name="contacts[]" multiple="multiple">
-                                <option value=""> - Null or incl from Template - </option>
 <?php
 foreach ($viewData->contacts as $contact => $cArray) {
     if (in_array($contact,$svcContacts)) {
@@ -652,7 +650,6 @@ foreach ($viewData->contacts as $contact => $cArray) {
                         <th style="width:30%;text-align:right;">Contact Groups:</th>
                         <td style="text-align:left;">
                             <select id="contactgrps" name="contactgrps[]" multiple="multiple">
-                                <option value=""> - Null or incl from Template - </option>
 <?php
 foreach ($viewData->contactgroups as $contactGroup => $cgArray) {
     if (in_array($contactGroup, $svcContactGrps)) {
@@ -838,7 +835,7 @@ foreach ($chkInts as $chkTime => $chkVal) {
                     <tr>
                         <th style="width:30%;text-align:right;">Service Groups:</th>
                         <td style="text-align:left;">
-                            <select id="svcgrp" name="svcgrp" multiple="multiple">
+                            <select id="svcgrp" name="svcgrp[]" multiple="multiple">
                                 <option value=""> - Null or incl from Template - </option>
 <?php
 foreach ($viewData->svcgroups as $svcGroup => $sgArray) {

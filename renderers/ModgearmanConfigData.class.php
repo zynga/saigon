@@ -59,6 +59,9 @@ class ModgearmanConfigDataRenderer implements LoggerRendererObject
             if ($key == 'logfile') {
                 $value = base64_decode($value);
             }
+            elseif (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($configinfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -73,6 +76,9 @@ class ModgearmanConfigDataRenderer implements LoggerRendererObject
             foreach ($testData->oldConfiginfo as $key => $value) {
                 if ($key == "logfile") {
                     $value = base64_decode($value);
+                }
+                elseif (is_array($value)) {
+                    $value = implode(",", $value);
                 }
                 array_push($oldConfiginfo, "\"$key\" => \"$value\"");
             }

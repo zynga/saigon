@@ -56,6 +56,9 @@ class NRPECfgDataRenderer implements LoggerRendererObject
     {
         $nrpecfgInfo = array();
         foreach ($testData->nrpecfgInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($nrpecfgInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -66,6 +69,9 @@ class NRPECfgDataRenderer implements LoggerRendererObject
         if (($testData->action == 'modify') || ($testData->action == 'delete')) {
             $oldNRPECfgInfo = array();
             foreach ($testData->oldNRPECfgInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldNRPECfgInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_nrpe_cfg_info=[".implode(", ", $oldNRPECfgInfo)."]";

@@ -111,7 +111,7 @@ class CommandController extends Controller
     {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('command_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $cmdName = $this->getParam('cmdName');
@@ -171,7 +171,7 @@ class CommandController extends Controller
     {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('command_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $cmdName = $this->getParam('cmdName');
@@ -225,7 +225,7 @@ class CommandController extends Controller
     {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('command_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $command = $this->getParam('command');
@@ -287,9 +287,8 @@ class CommandController extends Controller
             $this->sendError('generic_error', $viewData);
         }
         $viewData->command = $command;
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $modrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $commandInfo = RevDeploy::getDeploymentCommand($commonRepo, $command, $modrevision);
+        $modrevision = RevDeploy::getDeploymentNextRev($deployment);
+        $commandInfo = RevDeploy::getCommonMergedDeploymentCommand($deployment, $command, $modrevision);
         if (empty($commandInfo)) {
             $viewData->header = $this->getErrorHeader('command_error');
             $viewData->error = 'Unable to fetch command information for '.$command.' from data store';
@@ -310,7 +309,7 @@ class CommandController extends Controller
     {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('command_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $viewData->deployment = $deployment;
         $cmdName = $this->getParam('cmdName');
@@ -349,9 +348,14 @@ class CommandController extends Controller
         if (RevDeploy::existsDeploymentCommand($deployment, $cmd, $modrevision) === true) {
             $viewData->cmdline = RevDeploy::getDeploymentCommandExec($deployment, $cmd, $modrevision);
         } else {
-            $crepo = RevDeploy::getDeploymentCommonRepo($deployment);
-            $crev = RevDeploy::getDeploymentRev($crepo);
-            $viewData->cmdline = RevDeploy::getDeploymentCommandExec($crepo, $cmd, $crev);
+            $commonRepos = RevDeploy::getCommonRepos($deployment);
+            foreach ($commonRepos as $commonRepo) {
+                $cRev = RevDeploy::getDeploymentRev($commonRepo);
+                if (RevDeploy::existsDeploymentCommand($commonRepo, $cmd, $cRev) === true) {
+                    $viewData->cmdline = RevDeploy::getDeploymentCommandExec($commonRepo, $cmd, $cRev);
+                    break;
+                }
+            }
         }
         $this->sendResponse('command_show_cmdline', $viewData);
     }
@@ -409,7 +413,7 @@ class CommandController extends Controller
             $viewData->action = 'copyToWrite';
             $this->sendResponse('command_action_stage', $viewData);
         }
-        $this->checkGroupAuth($todeployment);
+        $this->checkGroupAuthByDeployment($todeployment);
         $this->checkDeploymentRevStatus($todeployment);
         $tdRev = RevDeploy::getDeploymentNextRev($todeployment);
         if (RevDeploy::existsDeploymentCommand($todeployment, $cmdName, $tdRev) === true) {

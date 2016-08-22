@@ -9,7 +9,7 @@
 class LDAPAuth implements Auth
 {
 
-    const LDAP_SERVERS = 'host.domain.com host.domain.com';
+    const LDAP_SERVERS = 'ldap.domain.com';
     const LDAP_PORT = '389';
     const LDAP_BASEDN = 'dc=domain,dc=com';
 
@@ -26,9 +26,64 @@ class LDAPAuth implements Auth
         return 'LDAP Groups:';
     }
 
-    public function checkAuth($deployment)
+    public function checkAuthByDeployment($deployment)
     {
         $ldapGroup = RevDeploy::getDeploymentAuthGroup($deployment);
+        $supermen = SUPERMEN;
+        if ((!isset($_SERVER['PHP_AUTH_USER'])) || (empty($_SERVER['PHP_AUTH_USER']))) {
+            return false;
+        }
+        elseif ((!isset($_SERVER['PHP_AUTH_PW'])) || (empty($_SERVER['PHP_AUTH_PW']))) {
+            return false;
+        }
+        $user = $_SERVER['PHP_AUTH_USER'];
+        $pass = $_SERVER['PHP_AUTH_PW'];
+        $return = false;
+        if (preg_match('/,/', $ldapGroup)) {
+            $return = $this->inGroup($user, $pass, $ldapGroup, 'people');
+            if ($return === true) {
+                return true;
+            }
+            // Check to see if they are a service account
+            $return = $this->inGroup($user, $pass, $ldapGroup, 'service accounts');
+            if ($return === true) {
+                return true;
+            }
+            // Check and see if they are a super user
+            $groups = preg_split('/\s?,\s?/', $ldapGroup);
+            if (!in_array($supermen, $groups)) {
+                $return = $this->inGroup($user, $pass, $supermen, 'people');
+                if ($return === true) {
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        } else {
+            $return = $this->inGroup($user, $pass, $ldapGroup, 'people');
+            if ($return === true) {
+                return true;
+            }
+            // Check to see if they are a service account
+            $return = $this->inGroup($user, $pass, $ldapGroup, 'service accounts');
+            if ($return === true) {
+                return true;
+            }
+            // Check and see if they are a super user
+            if ($ldapGroup != $supermen) {
+                $return = $this->inGroup($user, $pass, $supermen, 'people');
+                if ($return === true) {
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        }
+    }
+
+    public function checkAuthByGroup($authgroup)
+    {
+        $ldapGroup = $authgroup;
         $supermen = SUPERMEN;
         if ((!isset($_SERVER['PHP_AUTH_USER'])) || (empty($_SERVER['PHP_AUTH_USER']))) {
             return false;

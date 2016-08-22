@@ -21,7 +21,7 @@ $cmdtimeout = isset($viewData->nrpecfg['command_timeout'])?$viewData->nrpecfg['c
 $conntimeout = isset($viewData->nrpecfg['connection_timeout'])?$viewData->nrpecfg['connection_timeout']:'300';
 $allowedhosts = isset($viewData->nrpecfg['allowed_hosts'])?$viewData->nrpecfg['allowed_hosts']:'127.0.0.1';
 $includedir = isset($viewData->nrpecfg['include_dir'])?$viewData->nrpecfg['include_dir']:'/usr/local/nagios/etc/nrpe.d';
-$nrpecmds = isset($viewData->nrpecfg['cmds'])?explode(',', $viewData->nrpecfg['cmds']):array();
+$nrpecmds = isset($viewData->nrpecfg['cmds'])?$viewData->nrpecfg['cmds']:array();
 
 ?>
 <link type="text/css" rel="stylesheet" href="static/css/tables.css" />

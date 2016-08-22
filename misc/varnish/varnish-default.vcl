@@ -113,3 +113,10 @@ sub vcl_deliver {
     remove resp.http.x-host;
 }
 
+# make the hash key simply the url
+# default is url+(req.http.host|server.ip) ... both change depending on the request and we don't want that
+sub vcl_hash {
+    hash_data(req.url);
+    return (hash);
+}
+

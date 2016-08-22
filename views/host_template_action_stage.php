@@ -35,6 +35,8 @@ $hostNotifInt = isset($viewData->hostInfo['notification_interval'])?$viewData->h
 $hostNotifPeriod = isset($viewData->hostInfo['notification_period'])?$viewData->hostInfo['notification_period']:'';
 $hostNotifOpts = isset($viewData->hostInfo['notification_options'])?$viewData->hostInfo['notification_options']:array();
 $hostNotesUrl = isset($viewData->hostInfo['notes_url'])?$viewData->hostInfo['notes_url']:'';
+$hostEventHandEn = isset($viewData->hostInfo['event_handler_enabled'])?$viewData->hostInfo['event_handler_enabled']:'-1';
+$hostEHCommand = isset($viewData->hostInfo['event_handler'])?$viewData->hostInfo['event_handler']:'';
 
 
 ?>
@@ -151,19 +153,42 @@ $(function() {
         .multiselect({
             selectedList: 1,
             noneSelectedText: "Select Contact Groups",
+        }).multiselectfilter(),
+    $("#ehcmd")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select Eventhandler Command",
+            multiple: false,
+        }).multiselectfilter(),
+    $("#ehenabled")
+        .multiselect({
+            selectedList: 1,
+            noneSelectedText: "Select State",
+            multiple: false,
         }).multiselectfilter();
 });
 </script>
 <script type="text/javascript">
-function getCmdDefinition() {
-    var cmd = $('#checkcmd').val();
+function getCmdDefinition(mode) {
+    if (mode == 'eh') {
+        var cmd = $('#ehcmd').val();
+    }
+    else {
+        var cmd = $('#checkcmd').val();
+    }
+    if (cmd == null) return;
     $.ajax({
         url: 'action.php',
         type: 'POST',
         data: 'controller=command&action=getCmdline&deployment=<?php echo $deployment?>&cmdName=' + encodeURIComponent(cmd),
         dataType: 'html',
         success: function( data ) {
-            $('#cmdresults').html( data );
+            if (mode == 'eh') {
+                $('#ehresults').html( data );
+            }
+            else {
+                $('#cmdresults').html( data );
+            }
         }
     });
 }
@@ -182,15 +207,8 @@ $(function() {
 </script>
 <script type="text/javascript">
 $(document).ready(function() {
-    $.ajax({
-        url: 'action.php',
-        type: 'POST',
-        data: 'controller=command&action=getCmdline&deployment=<?php echo $deployment?>&cmdName=<?php echo $hostChkCommand?>',
-        dataType: 'html',
-        success: function( data ) {
-            $('#cmdresults').html( data );
-        }
-    });
+    getCmdDefinition();
+    getCmdDefinition('eh');
 });
 </script>
 <body>
@@ -248,7 +266,7 @@ if ($action == 'add_write') {
 foreach ($viewData->hosttemplates as $ctemplate => $ctArray) {
     if (!empty($hostName)) {
         /* Prevent Self-Inclusion as Template */
-        if ($ctemplate == $hostName) continue;
+        if (($ctemplate == $hostName) && ($action != 'copy_write')) continue;
         if ((isset($ctArray['use'])) && ($ctArray['use'] == $hostName)) continue;
     }
     if ($ctemplate == $hostUse) {
@@ -703,6 +721,70 @@ foreach ($viewData->timeperiods as $timePeriod => $tpArray) {
                 <table>
                     <tr>
                         <th>Notes URL:</th><td><input type="text" value="<?php echo $hostNotesUrl?>" id="notesurl" name="notesurl" size="128" maxlength="512" /></td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr><tr>
+        <td colspan="4">
+            <div class="parentClass divCacGroup" style="text-align:left;text-indent:25px;background-color:#91C5D4;border-radius:4px;" id="eventhandler">
+                <img src="static/imgs/plusSign.gif">
+                EventHandler Related Information:
+            </div>
+            <div class="divHide parent-desc-eventhandler" style="padding-left:100px;">
+                <table>
+                    <tr>
+                        <th style="width:30%;text-align:right;">Eventhandler Enabled:</th>
+                        <td style="text-align:left;">
+                            <select id="ehenabled" name="ehenabled" multiple="multiple">
+                                <option value=""> - Null or incl from Template - </option>
+<?php
+if (preg_match("/^0$/", $hostEventHandEn)) {
+?>
+                                <option value="on">On</option>
+                                <option value="off" selected>Off</option>
+<?php
+}
+else if (preg_match("/^1$/", $hostEventHandEn)) {
+?>
+                                <option value="on" selected>On</option>
+                                <option value="off">Off</option>
+<?php
+} else {
+?>
+                                <option value="on">On</option>
+                                <option value="off">Off</option>
+<?php
+}
+?>
+                            </select>
+                        </td>
+                        <th style="text-align:right;width:30%;">Eventhandler Command:</th>
+                        <td style="text-align:left;">
+                            <select id="ehcmd" name="ehcmd" multiple="multiple" onChange="getCmdDefinition('eh')">
+                                <option value=""> - Null or incl from Template - </option>
+<?php
+asort($viewData->cmds);
+foreach ($viewData->cmds as $cmd => $cmdArray) {
+    if ($cmd == $hostEHCommand) {
+?>
+                                <option value="<?php echo $cmd?>" selected><?php echo $cmd?></option>
+<?php
+    } else {
+?>
+                                <option value="<?php echo $cmd?>"><?php echo $cmd?></option>
+<?php
+    }
+}
+?>
+                            </select>
+                        </td>
+                    </tr><tr>
+                        <td colspan="4">
+                            <div class="divCacGroup" style="width:98%;min-height:20px;text-align:center;">
+                                <div id="ehresults"></div>
+                            </div>
+                        </td>
                     </tr>
                 </table>
             </div>

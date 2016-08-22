@@ -59,6 +59,9 @@ class ServiceDataRenderer implements LoggerRendererObject
     {
         $svcInfo = array();
         foreach ($testData->svcInfo as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(",", $value);
+            }
             array_push($svcInfo, "\"$key\" => \"$value\"");
         }
         $msg = "{$testData->user} {$testData->ip}";
@@ -69,6 +72,9 @@ class ServiceDataRenderer implements LoggerRendererObject
         if ($testData->action == 'modify') {
             $oldServiceInfo = array();
             foreach ($testData->oldServiceInfo as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
                 array_push($oldServiceInfo, "\"$key\" => \"$value\"");
             }
             $msg .= " old_service_info=[".implode(", ", $oldServiceInfo)."]";

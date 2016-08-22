@@ -30,6 +30,8 @@ class NagLogger
                 'renderingClass' => 'DeploymentDataRenderer'),
             array('renderedClass' => 'CgiConfigData', 
                 'renderingClass' => 'CgiConfigDataRenderer'),
+            array('renderedClass' => 'ClusterCmdsData',
+                'renderingClass' => 'ClusterCmdsDataRenderer'),
             array('renderedClass' => 'CommandData',
                 'renderingClass' => 'CommandDataRenderer'),
             array('renderedClass' => 'ContactData',

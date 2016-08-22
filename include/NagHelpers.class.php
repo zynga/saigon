@@ -34,7 +34,9 @@ class NagHelpers {
     }
 
     public function setGlobalNegate($negate) {
-        self::$globalnegate = $negate;
+        if ((isset($negate)) && (!empty($negate))) {
+            self::$globalnegate = $negate;
+        }
     }
 
     public function enableSharding($shardKey, $shardCount, $shardPosition) {
@@ -62,11 +64,44 @@ class NagHelpers {
             if (preg_match("/$negate/", $host)) return;
         }
         if ((!isset($hostData['alias'])) || (empty($hostData['alias']))) {
-            $tmpArray = preg_split('/\./', $hostData['host_name']);
-            if (self::$aliastemplate == 'host') {
-                $hostData['alias'] = $tmpArray[0];
-            } else {
-                $hostData['alias'] = $tmpArray[0].'-'.$tmpArray[1];
+            if (preg_match('/\./', $hostData['host_name'])) {
+                $tmpArray = preg_split('/\./', $hostData['host_name']);
+                if (self::$aliastemplate == 'host') {
+                    $hostData['alias'] = $tmpArray[0];
+                } else {
+                    $hostData['alias'] = $tmpArray[0].'-'.$tmpArray[1];
+                }
+            }
+            else {
+                $hostData['alias'] = $hostData['host_name'];
+            }
+        }
+        if ((!isset($hostData['hostgroups'])) || (empty($hostData['hostgroups']))) {
+            $hostData['hostgroups'] = array();
+        } elseif ((isset($hostData['hostgroups'])) && (!empty($hostData['hostgroups']))) {
+            if (!is_array($hostData['hostgroups'])) {
+                $hostData['hostgroups'] = array($hostData['hostgroups']);
+            }
+        }
+        if ((!isset($hostData['contacts'])) || (empty($hostData['contacts']))) {
+            $hostData['contacts'] = array();
+        } elseif ((isset($hostData['contacts'])) && (!empty($hostData['contacts']))) {
+            if (!is_array($hostData['contacts'])) {
+                $hostData['contacts'] = array($hostData['contacts']);
+            }
+        }
+        if ((!isset($hostData['contact_groups'])) || (empty($hostData['contact_groups']))) {
+            $hostData['contact_groups'] = array();
+        } elseif ((isset($hostData['contact_groups'])) && (!empty($hostData['contact_groups']))) {
+            if (!is_array($hostData['contact_groups'])) {
+                $hostData['contact_groups'] = array($hostData['contact_groups']);
+            }
+        }
+        if ((!isset($hostData['use'])) || (empty($hostData['use']))) {
+            $hostData['use'] = array();
+        } elseif ((isset($hostData['use'])) && (!empty($hostData['use']))) {
+            if (!is_array($hostData['use'])) {
+                $hostData['use'] = array($hostData['use']);
             }
         }
         $this->getCache()->addHost($host, $hostData);
@@ -91,6 +126,34 @@ class NagHelpers {
         } else {
             $fields['alias'] = $hostArray['host'];
         }
+        if ((!isset($hostArray['hostgroups'])) || (empty($hostArray['hostgroups']))) {
+            $fields['hostgroups'] = array();
+        } elseif ((isset($hostArray['hostgroups'])) && (!empty($hostArray['hostgroups']))) {
+            if (!is_array($hostArray['hostgroups'])) {
+                $fields['hostgroups'] = array($hostArray['hostgroups']);
+            }
+        }
+        if ((!isset($hostArray['contacts'])) || (empty($hostArray['contacts']))) {
+            $fields['contacts'] = array();
+        } elseif ((isset($hostArray['contacts'])) && (!empty($hostArray['contacts']))) {
+            if (!is_array($hostArray['contacts'])) {
+                $fields['contacts'] = array($hostArray['contacts']);
+            }
+        }
+        if ((!isset($hostArray['contact_groups'])) || (empty($hostArray['contact_groups']))) {
+            $fields['contact_groups'] = array();
+        } elseif ((isset($hostArray['contact_groups'])) && (!empty($hostArray['contact_groups']))) {
+            if (!is_array($hostArray['contact_groups'])) {
+                $fields['contact_groups'] = array($hostArray['contact_groups']);
+            }
+        }
+        if ((!isset($hostArray['use'])) || (empty($hostArray['use']))) {
+            $fields['use'] = array();
+        } elseif ((isset($hostArray['use'])) && (!empty($hostArray['use']))) {
+            if (!is_array($hostArray['use'])) {
+                $fields['use'] = array($hostArray['use']);
+            }
+        }
         $this->getCache()->addHost($fields['host_name'], $fields);
     }
 
@@ -98,79 +161,55 @@ class NagHelpers {
         foreach ($services as $svcName => $svcObj) {
             $this->getCache()->addSvc($svcName);
             foreach ($svcObj as $key => $value) {
-                if ($key == 'deployment') continue;
-                if ((empty($value)) && ($value == null)) continue;
-                $this->getCache()->addSvcInfo($svcName, $key, $value);
+                if (($key == 'deployment') || ($key == 'check_command')) continue;
+                if (preg_match("/^carg\d+/", $key)) continue;
+                if ( ($key == 'use') || ($key == 'contacts') ||
+                     ($key == 'contact_groups') || ($key == 'host_name') ||
+                     ($key == 'hostgroup_name') )
+                   {
+                    if (!is_array($value)) {
+                        $this->getCache()->addSvcInfo($svcName, $key, array($value));
+                    }
+                    else {
+                        $this->getCache()->addSvcInfo($svcName, $key, $value);
+                    }
+                } else {
+                    $this->getCache()->addSvcInfo($svcName, $key, $value);
+                }
             }
+            $command = $svcObj->check_command;
+            for ($i=1;$i<=32; $i++) {
+                $key = 'carg'.$i;
+                if ((isset($svcObj->$key)) && (!empty($svcObj->$key))) {
+                    $command .= "!".$svcObj->$key;
+                }
+            }
+            $this->getCache()->addSvcInfo($svcName, 'check_command', $command);
         }
     }
 
-    public function importNodeTemplate(stdClass $nodeTemplates, $subdeployment = false) {
+    public function getNodeTemplatePriorities(stdClass $nodeTemplates) {
+        $priorities = array();
+        $priorities[1] = array();
+        $priorities[2] = array();
+        $priorities[3] = array();
+        $priorities[4] = array();
+        $priorities[5] = array();
+        $priorities[6] = array();
         foreach ($nodeTemplates as $ntName => $ntObj) {
-            if (($subdeployment !== false) && (!empty($subdeployment))) {
-                if ((isset($ntObj->subdeployment)) && ($ntObj->subdeployment != $subdeployment)) {
-                    continue;
-                }
+            if ((isset($ntObj->priority)) && (!empty($ntObj->priority))) {
+                array_push($priorities[$ntObj->priority], $ntName);
             }
-            if ((!isset($ntObj->type)) || ($ntObj->type == 'dynamic')) {
-                $pattern = $ntObj->regex;
-                foreach ($this->getCache()->getHosts() as $fqdnHost => $hostArray) {
-                    if (preg_match("/$pattern/", $fqdnHost)) {
-                        if ((isset($ntObj->hostgroup)) && (!empty($ntObj->hostgroup))) {
-                            $this->getCache()->addTrackHostToHostgroup($ntObj->hostgroup, $fqdnHost);
-                        }
-                        if ((isset($ntObj->nregex)) && (preg_match("/$ntObj->nregex/", $fqdnHost))) {
-                            if ((isset($ntObj->services)) && (!empty($ntObj->services))) {
-                                foreach ($ntObj->services as $service) {
-                                    $this->getCache()->addNegateHostToSvc($service, $fqdnHost);
-                                }
-                            }
-                        } else {
-                            if ((isset($ntObj->hosttemplate)) && (!empty($ntObj->hosttemplate))) {
-                                $this->getCache()->addHostTemplateToHost($fqdnHost, $ntObj->hosttemplate);
-                            }
-                            if ((isset($ntObj->hostgroup)) && (!empty($ntObj->hostgroup))) {
-                                $this->getCache()->addHostGroupToHost($fqdnHost, $ntObj->hostgroup);
-                            } else {
-                                /* Add hostname to service checks, because a hostgroup wasn't specified */
-                                foreach ($ntObj->services as $service) {
-                                    $this->getCache()->addHostToSvc($service, $fqdnHost);
-                                }
-                            }
-                        }
-                    }
+            else {
+                if ($ntObj->type == 'unclassified') {
+                    array_push($priorities[6], $ntName);
                 }
-                if ((isset($ntObj->hostgroup)) && (!empty($ntObj->hostgroup))) {
-                    $haveHosts = $this->getCache()->getTrackHostToHostgroup($ntObj->hostgroup);
-                    if ((!empty($haveHosts)) && (isset($ntObj->services)) && (!empty($ntObj->services))) {
-                        foreach ($ntObj->services as $service) {
-                            $this->getCache()->addHostGroupToSvc($service, $ntObj->hostgroup);
-                        }
-                    }
-                }
-            } else if ($ntObj->type == 'static') {
-                $nodes = explode(',', $ntObj->selhosts);
-                foreach ($this->getCache()->getHosts() as $fqdnHost => $hostArray) {
-                    if (in_array($hostArray['address'], $nodes)) {
-                        if ((isset($ntObj->hosttemplate)) && (!empty($ntObj->hosttemplate))) {
-                            $this->getCache()->addHostTemplateToHost($fqdnHost, $ntObj->hosttemplate);
-                        }
-                        if ((isset($ntObj->hostgroup)) && (!empty($ntObj->hostgroup))) {
-                            $this->getCache()->addHostGroupToHost($fqdnHost, $ntObj->hostgroup);
-                        } else {
-                            foreach ($ntObj->services as $service) {
-                                $this->getCache()->addHostToSvc($service, $fqdnHost);
-                            }
-                        }
-                    }
-                }
-                if ((isset($ntObj->hostgroup)) && (!empty($ntObj->hostgroup))) {
-                    foreach ($ntObj->services as $service) {
-                        $this->getCache()->addHostGroupToSvc($service, $ntObj->hostgroup);
-                    }
+                else {
+                    array_push($priorities[1], $ntName);
                 }
             }
         }
+        return $priorities;
     }
 
     public function importServiceDependencies(stdClass $serviceDependencies) {
@@ -178,14 +217,15 @@ class NagHelpers {
             $svcDepArray = array();
             $svcDepArray['service_description'] = $this->getCache()->getSvcDesc($svcDepObj->service_description);
             $svcDepArray['dependent_service_description'] = $this->getCache()->getSvcDesc($svcDepObj->dependent_service_description);
-            /* Something is wrong, we are missing a service needed to build this dependency */
-            if (($svcDepArray['service_description'] == null) || ($svcDepArray['dependent_service_description'] == null)) continue;
-            $svcDepHosts = $this->getCache()->getSvcHosts($svcDepObj->dependent_service_description);
-            if ($svcDepHosts != null) $svcDepArray['host_name'] = $svcDepHosts;
-            $svcDepHostGroups = $this->getCache()->getSvcHostGroups($svcDepObj->dependent_service_description);
-            if ($svcDepHostGroups != null) $svcDepArray['hostgroup_name'] = $svcDepHostGroups;
             $svcDepArray['execution_failure_criteria'] = $svcDepObj->execution_failure_criteria;
             $svcDepArray['notification_failure_criteria'] = $svcDepObj->notification_failure_criteria;
+            if ((isset($svcDepObj->inherits_parent)) && (!empty($svcDepObj->inherits_parent))) {
+                $svcDepArray['inherits_parent'] = $svcDepObj->inherits_parent;
+            }
+            $svcDepArray['host_name'] = array();
+            $svcDepArray['hostgroup_name'] = array();
+            $svcDepArray['_saigon_service_description'] = $svcDepObj->service_description;
+            $svcDepArray['_saigon_dependent_service_description'] = $svcDepObj->dependent_service_description;
             $this->getCache()->addSvcDependency($svcDepName, $svcDepArray);
         }
     }
@@ -194,8 +234,38 @@ class NagHelpers {
         foreach ($serviceEscalations as $svcEsc => $svcEscObj) {
             $svcEscArray = array();
             $svcEscArray['service_description'] = $this->getCache()->getSvcDesc($svcEscObj->service_description);
-            if ($svcEscObj->contacts != null) $svcEscArray['contacts'] = $svcEscObj->contacts;
-            if ($svcEscObj->contact_groups != null) $svcEscArray['contact_groups'] = $svcEscObj->contact_groups;
+            if ($svcEscObj->contacts != null) {
+                if (!is_array($svcEscObj->contacts)) {
+                    if (preg_match('/,/', $svcEscObj->contacts)) {
+                        $svcEscArray['contacts'] = preg_split('/\s?,\s?/', $svcEscObj->contacts);
+                    }
+                    else {
+                        $svcEscArray['contacts'] = array($svcEscObj->contacts);
+                    }
+                }
+                else {
+                    $svcEscArray['contacts'] = $svcEscObj->contacts;
+                }
+            }
+            else {
+                $svcEscArray['contacts'] = array();
+            }
+            if ($svcEscObj->contact_groups != null) {
+                if (!is_array($svcEscObj->contact_groups)) {
+                    if (preg_match('/,/', $svcEscObj->contact_groups)) {
+                        $svcEscArray['contact_groups'] = preg_split('/\s?,\s?/', $svcEscObj->contact_groups);
+                    }
+                    else {
+                        $svcEscArray['contact_groups'] = array($svcEscObj->contact_groups);
+                    }
+                }
+                else {
+                    $svcEscArray['contact_groups'] = $svcEscObj->contact_groups;
+                }
+            }
+            else {
+                $svcEscArray['contact_groups'] = array();
+            }
             $svcEscArray['first_notification'] = $svcEscObj->first_notification;
             if ($svcEscObj->last_notification == 'all') {
                 $svcEscArray['last_notification'] = '0';
@@ -203,22 +273,13 @@ class NagHelpers {
                 $svcEscArray['last_notification'] = $svcEscObj->last_notification;
             }
             $svcEscArray['notification_interval'] = $svcEscObj->notification_interval;
+            $svcEscArray['host_name'] = array();
+            $svcEscArray['hostgroup_name'] = array();
             if ($svcEscObj->escalation_period != null) $svcEscArray['escalation_period'] = $svcEscObj->escalation_period;
             if ($svcEscObj->escalation_options != null) $svcEscArray['escalation_options'] = $svcEscObj->escalation_options;
-            $svcEscHosts = $this->getCache()->getSvcHosts($svcEscObj->service_description);
-            if ($svcEscHosts != null) $svcEscArray['host_name'] = $svcEscHosts;
-            $svcEscHostGroups = $this->getCache()->getSvcHostGroups($svcEscObj->service_description);
-            if ($svcEscHostGroups != null) $svcEscArray['hostgroup_name'] = $svcEscHostGroups;
+            $svcEscArray['_saigon_service_description'] = $svcEscObj->service_description;
             $this->getCache()->addSvcEscalation($svcEsc, $svcEscArray);
         }
-    }
-
-    public function returnCache() {
-        return $this->getCache()->get();
-    }
-
-    public function returnHosts() {
-        return $this->getCache()->getHosts();
     }
 
     public function scrubHosts() {
@@ -258,151 +319,24 @@ class NagHelpers {
         }
     }
 
-    public function returnServices($hostCache) {
-        $services = $this->getCache()->getSvcs();
-        if (self::$enableSharding === false) return $services;
-        $hosts = array_keys($hostCache);
-        $hostgroups = $this->buildHostGroups($hosts, $hostCache);
-        foreach ($services as $service => $svcData) {
-            if ((isset($svcData['host_name'])) && (!empty($svcData['host_name']))) {
-                $scrubbed = array();
-                foreach ($svcData['host_name'] as $host) {
-                    if (preg_match("/!/", $host)) {
-                        $host = trim("!");
-                        if (in_array($host, $hosts)) {
-                            array_push($scrubbed, "!" . $host);
-                        }
-                    }
-                    elseif (in_array($host, $hosts)) {
-                        array_push($scrubbed, $host);
-                    }
-                }
-                if (empty($scrubbed)) {
-                    unset($services[$service]['host_name']);
-                }
-                else {
-                    $services[$service]['host_name'] = $scrubbed;
-                }
-            }
-
-            if ((isset($svcData['hostgroup_name'])) && (!empty($svcData['hostgroup_name']))) {
-                $scrubbed = array();
-                foreach ($svcData['hostgroup_name'] as $svchg) {
-                    if (in_array($svchg, $hostgroups)) {
-                        array_push($scrubbed, $svchg);
-                    }
-                }
-                if (empty($scrubbed)) {
-                    unset($services[$service]['hostgroup_name']);
-                }
-                else {
-                    $services[$service]['hostgroup_name'] = $scrubbed;
-                }
-            }
-        }
-        return $services;
+    public function returnCache() {
+        return $this->getCache()->get();
     }
 
-    public function returnServiceDependencies($hostCache) {
-        $servicedeps = $this->getCache()->getSvcDependencies();
-        if (self::$enableSharding === false) return $servicedeps;
-        $hosts = array_keys($hostCache);
-        $hostgroups = $this->buildHostGroups($hosts, $hostCache);
-        foreach ($servicedeps as $servicedep => $svcdepData) {
-            if ((isset($svcdepData['host_name'])) && (!empty($svcdepData['host_name']))) {
-                $scrubbed = array();
-                foreach ($svcdepData['host_name'] as $host) {
-                    if (preg_match("/!/", $host)) {
-                        $host = trim("!");
-                        if (in_array($host, $hosts)) {
-                            array_push($scrubbed, "!" . $host);
-                        }
-                    }
-                    elseif (in_array($host, $hosts)) {
-                        array_push($scrubbed, $host);
-                    }
-                }
-                if (empty($scrubbed)) {
-                    unset($servicedeps[$servicedep]['host_name']);
-                }
-                else {
-                    $servicedeps[$servicedep]['host_name'] = $scrubbed;
-                }
-            }
-
-            if ((isset($svcdepData['hostgroup_name'])) && (!empty($svcdepData['hostgroup_name']))) {
-                $scrubbed = array();
-                foreach ($svcdepData['hostgroup_name'] as $svchg) {
-                    if (in_array($svchg, $hostgroups)) {
-                        array_push($scrubbed, $svchg);
-                    }
-                }
-                if (empty($scrubbed)) {
-                    unset($servicedeps[$servicedep]['hostgroup_name']);
-                }
-                else {
-                    $servicedeps[$servicedep]['hostgroup_name'] = $scrubbed;
-                }
-            }
-        }
-        return $servicedeps;
+    public function returnHosts() {
+        return $this->getCache()->getHosts();
     }
 
-    public function returnServiceEscalations($hostCache) {
-        $serviceescs = $this->getCache()->getSvcEscalations();
-        if (self::$enableSharding === false) return $serviceescs;
-        $hosts = array_keys($hostCache);
-        $hostgroups = $this->buildHostGroups($hosts, $hostCache);
-        foreach ($serviceescs as $serviceesc => $svcescData) {
-            if ((isset($svcescData['host_name'])) && (!empty($svcescData['host_name']))) {
-                $scrubbed = array();
-                foreach ($svcescData['host_name'] as $host) {
-                    if (preg_match("/!/", $host)) {
-                        $host = trim("!");
-                        if (in_array($host, $hosts)) {
-                            array_push($scrubbed, "!" . $host);
-                        }
-                    }
-                    elseif (in_array($host, $hosts)) {
-                        array_push($scrubbed, $host);
-                    }
-                }
-                if (empty($scrubbed)) {
-                    unset($serviceescs[$serviceesc]['host_name']);
-                }
-                else {
-                    $serviceescs[$serviceesc]['host_name'] = $scrubbed;
-                }
-            }
-
-            if ((isset($svcescData['hostgroup_name'])) && (!empty($svcescData['hostgroup_name']))) {
-                $scrubbed = array();
-                foreach ($svcescData['hostgroup_name'] as $svchg) {
-                    if (in_array($svchg, $hostgroups)) {
-                        array_push($scrubbed, $svchg);
-                    }
-                }
-                if (empty($scrubbed)) {
-                    unset($serviceescs[$serviceesc]['hostgroup_name']);
-                }
-                else {
-                    $serviceescs[$serviceesc]['hostgroup_name'] = $scrubbed;
-                }
-            }
-        }
-        return $serviceescs;
+    public function returnServices() {
+        return $this->getCache()->getSvcs();
     }
 
-    private function buildHostGroups($hosts, $hostCache) {
-        $results = array();
-        foreach ($hosts as $host) {
-            if ((isset($hostCache[$host]['hostgroups'])) && (!empty($hostCache[$host]['hostgroups']))) {
-                foreach ($hostCache[$host]['hostgroups'] as $hostgroup) {
-                    array_push($results, $hostgroup);
-                }
-            }
-        }
-        return $results;
+    public function returnServiceDependencies() {
+        return $this->getCache()->getSvcDependencies();
+    }
+
+    public function returnServiceEscalations() {
+        return $this->getCache()->getSvcEscalations();
     }
 
     protected function getCache() {
@@ -425,19 +359,6 @@ class NagHelpersCache {
         $this->m_cache['hosts'][$host] = $data;
     }
 
-    public function addHostGroupToHost($host, $hostgroup) {
-        if (!isset($this->m_cache['hosts'][$host]['hostgroups'])) {
-            $this->m_cache['hosts'][$host]['hostgroups'] = array();
-        }
-        if (!in_array($hostgroup, $this->m_cache['hosts'][$host]['hostgroups'])) {
-            array_push($this->m_cache['hosts'][$host]['hostgroups'], $hostgroup);
-        }
-    }
-
-    public function addHostTemplateToHost($host, $hosttemplate) {
-        $this->m_cache['hosts'][$host]['use'] = $hosttemplate;
-    }
-
     public function getHosts() {
         if ((isset($this->m_cache['hosts'])) && (!empty($this->m_cache['hosts']))) {
             return $this->m_cache['hosts'];
@@ -455,33 +376,6 @@ class NagHelpersCache {
 
     public function addSvcInfo($svc, $key, $value) {
         $this->m_cache['services'][$svc][$key] = $value;
-    }
-
-    public function addHostGroupToSvc($svc, $hostgroup) {
-        if (!isset($this->m_cache['services'][$svc]['hostgroup_name'])) {
-            $this->m_cache['services'][$svc]['hostgroup_name'] = array();
-        }
-        if (!in_array($hostgroup, $this->m_cache['services'][$svc]['hostgroup_name'])) {
-            array_push($this->m_cache['services'][$svc]['hostgroup_name'], $hostgroup);
-        }
-    }
-
-    public function addHostToSvc($svc, $host) {
-        if (!isset($this->m_cache['services'][$svc]['host_name'])) {
-            $this->m_cache['services'][$svc]['host_name'] = array();
-        }
-        if (!in_array($host, $this->m_cache['services'][$svc]['host_name'])) {
-            array_push($this->m_cache['services'][$svc]['host_name'], $host);
-        }
-    }
-
-    public function addNegateHostToSvc($svc, $host) {
-        if (!isset($this->m_cache['services'][$svc]['host_name'])) {
-            $this->m_cache['services'][$svc]['host_name'] = array();
-        }
-        if (!in_array("!" . $host, $this->m_cache['services'][$svc]['host_name'])) {
-            array_push($this->m_cache['services'][$svc]['host_name'], "!" . $host);
-        }
     }
 
     public function addSvcDependency($svcDepName, array $svcDepArray) {
@@ -544,6 +438,12 @@ class NagHelpersCache {
     public function addTrackHostToHostgroup($hostgroup, $host) {
         if (!isset($this->m_cache['trackhthg'][$hostgroup])) {
             $this->m_cache['trackhthg'][$hostgroup] = array();
+        }
+        elseif ( (isset($this->m_cache['trackhthg'][$hostgroup])) &&
+            (!is_array($this->m_cache['trackhthg'][$hostgroup])) ) {
+            $tmp = array();
+            array_push($tmp, $this->m_cache['trackhthg'][$hostgroup]);
+            $this->m_cache['trackhthg'][$hostgroup] = $tmp;
         }
         if (!in_array($host, $this->m_cache['trackhthg'][$hostgroup])) {
             array_push($this->m_cache['trackhthg'][$hostgroup], $host);

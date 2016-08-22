@@ -19,7 +19,6 @@ $deployment = $viewData->deployment;
         <tr>
             <th style="width:20%;">Location</th>
             <th style="width:20%;">Search Parameter</th>
-            <th style="width:20%;">SubDeployment</th>
             <th style="width:20%;">Note</th>
             <th style="width:10%;">Actions</th>
         </tr>
@@ -33,7 +32,6 @@ if ((isset($_SESSION[$deployment]['deployments'])) && (!empty($_SESSION[$deploym
         <tr>
             <td><?php echo $dArray['location']?></td>
             <td><?php echo $dArray['srchparam']?></td>
-            <td><?php echo isset($dArray['subdeployment'])?$dArray['subdeployment']:'N/A'?></td>
             <td><?php echo isset($dArray['note'])?$dArray['note']:'N/A'?></td>
             <td>
                 <a

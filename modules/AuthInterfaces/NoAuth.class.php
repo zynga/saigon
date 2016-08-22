@@ -11,7 +11,7 @@ class NoAuth implements Auth
 
     public static function getUser()
     {
-        return '-';
+        return 'na';
     }
 
     public function getTitle()
@@ -19,7 +19,12 @@ class NoAuth implements Auth
         return 'Authorization Disabled:';
     }
 
-    public function checkAuth($deployment)
+    public function checkAuthByDeployment($deployment)
+    {
+        return true;
+    }
+
+    public function checkAuthByGroup($authgroup)
     {
         return true;
     }

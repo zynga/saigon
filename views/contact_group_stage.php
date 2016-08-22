@@ -42,15 +42,15 @@ if ((isset($viewData->contactgroups)) && (!empty($viewData->contactgroups))) {
 <?php
             } else {
 ?>
-                <a class="deployBtn" title="Modify" href="action.php?controller=contactgrp&action=modify_stage&deployment=<?php echo $deployment?>&cgName=<?php echo $contactGroup?>">Modify</a>
                 <a class="deployBtn" title="Copy" href="action.php?controller=contactgrp&action=copy_stage&deployment=<?php echo $deployment?>&cgName=<?php echo $contactGroup?>">Copy</a>
+                <a class="deployBtn" title="Modify" href="action.php?controller=contactgrp&action=modify_stage&deployment=<?php echo $deployment?>&cgName=<?php echo $contactGroup?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=contactgrp&action=del_stage&deployment=<?php echo $deployment?>&cgName=<?php echo $contactGroup?>">Delete</a>
 <?php
             }
         } else {
 ?>
-                <a class="deployBtn" title="Modify" href="action.php?controller=contactgrp&action=modify_stage&deployment=<?php echo $deployment?>&cgName=<?php echo $contactGroup?>">Modify</a>
                 <a class="deployBtn" title="Copy" href="action.php?controller=contactgrp&action=copy_stage&deployment=<?php echo $deployment?>&cgName=<?php echo $contactGroup?>">Copy</a>
+                <a class="deployBtn" title="Modify" href="action.php?controller=contactgrp&action=modify_stage&deployment=<?php echo $deployment?>&cgName=<?php echo $contactGroup?>">Modify</a>
                 <a class="deployBtn" title="Delete" href="action.php?controller=contactgrp&action=del_stage&deployment=<?php echo $deployment?>&cgName=<?php echo $contactGroup?>">Delete</a>
 <?php
         }

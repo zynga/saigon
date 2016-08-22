@@ -15,6 +15,7 @@ class SvcDepController extends Controller {
         $svcDepInfo['dependent_service_description'] = $this->getParam('dependentsvc');
         $svcDepInfo['execution_failure_criteria'] = $this->getParam('checkcriteria');
         $svcDepInfo['notification_failure_criteria'] = $this->getParam('notifcriteria');
+        $svcDepInfo['inherits_parent'] = $this->getParam('inheritparent');
         if ($svcDepInfo['name'] === false) {
             $viewData = new ViewData();
             $viewData->error = 'Unable to detect incoming service parameters, make sure all of your input fields are filled in';
@@ -56,8 +57,12 @@ class SvcDepController extends Controller {
             $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
             $this->sendResponse('svc_dep_action_stage', $viewData);
         }
-        $svcDepInfo['execution_failure_criteria'] = implode(',', $svcDepInfo['execution_failure_criteria']);
-        $svcDepInfo['notification_failure_criteria'] = implode(',', $svcDepInfo['notification_failure_criteria']);
+        if (($svcDepInfo['inherits_parent'] === false) || ( $svcDepInfo['inherits_parent'] == 'off')) {
+            unset($svcDepInfo['inherits_parent']);
+        }
+        elseif ($svcDepInfo['inherits_parent'] == 'on') {
+            $svcDepInfo['inherits_parent'] = 1;
+        }
         return $svcDepInfo;
     }
 
@@ -83,7 +88,7 @@ class SvcDepController extends Controller {
     public function add_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_dep_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->deployment = $deployment;
@@ -126,7 +131,7 @@ class SvcDepController extends Controller {
     public function modify_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_dep_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $viewData->deployment = $deployment;
@@ -162,7 +167,7 @@ class SvcDepController extends Controller {
     public function del_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_dep_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
         $svcDepName = $this->getParam('svcDep');
         if ($svcDepName === false) {
@@ -204,9 +209,7 @@ class SvcDepController extends Controller {
             $this->sendError('generic_error', $viewData);
         }
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
-        $commonRepo = RevDeploy::getDeploymentCommonRepo($deployment);
-        $commonrevision = RevDeploy::getDeploymentRev($commonRepo);
-        $viewData->svcDepInfo = RevDeploy::getDeploymentSvcDependency($commonRepo, $svcDepName, $commonrevision);
+        $viewData->svcDepInfo = RevDeploy::getCommonMergedDeploymentSvcDependency($deployment, $svcDepName, $modrevision);
         $viewData->svcs = RevDeploy::getCommonMergedDeploymentSvcs($deployment, $modrevision);
         $viewData->deployment = $deployment;
         $viewData->action = 'copy_write';
@@ -216,8 +219,9 @@ class SvcDepController extends Controller {
     public function copy_write() {
         $viewData = new ViewData();
         $deployment = $this->getDeployment('svc_dep_error');
-        $this->checkGroupAuth($deployment);
+        $this->checkGroupAuthByDeployment($deployment);
         $this->checkDeploymentRevStatus($deployment);
+        $viewData->deployment = $deployment;
         $modrevision = RevDeploy::getDeploymentNextRev($deployment);
         $svcDepInfo = $this->fetchSvcDepInfo($deployment, 'copy_write', $modrevision);
         $svcDepName = $svcDepInfo['name'];
@@ -233,7 +237,6 @@ class SvcDepController extends Controller {
             $viewData->error = 'Unable to write service information for '.$svcDepName.' into '.$deployment.' Deployment';
             $this->sendError('generic_error', $viewData);
         }
-        $viewData->deployment = $deployment;
         $viewData->svc = $svcDepName;
         $this->sendResponse('svc_dep_write', $viewData);
     }

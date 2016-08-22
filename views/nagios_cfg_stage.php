@@ -1522,6 +1522,13 @@ if ((isset($viewData->error)) && (!empty($viewData->error))) {
                                         </td>
                                     </tr><tr>
                                         <th style="text-align:left;">
+                                            ModGearman v1.4.14:
+                                        </th>
+                                        <td colspan="2" style="background-color:#91C5D4;">
+                                            /usr/lib/mod_gearman/mod_gearman.o config=/etc/mod-gearman/module.conf
+                                        </td>
+                                    </tr><tr>
+                                        <th style="text-align:left;">
                                             Livestatus:
                                         </th>
                                         <td colspan="2" style="background-color:#91C5D4;">
